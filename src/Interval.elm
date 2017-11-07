@@ -20,7 +20,7 @@ See also [Wikipedia on intervals][WP].
 
 
 {-| An interval over the extended reals.
-`Bounded x y` will always satisfy x <= y.
+`Bounded x y` will always satisfy `x < y`. (`x == y` is either degenerate or empty)
 
 (Opaque type; do not export)
 
@@ -28,9 +28,6 @@ See also [Wikipedia on intervals][WP].
 type Interval
     = Bounded Bound Bound
     | Degenerate Float
-    | LeftBounded Bound
-    | RightBounded Bound
-    | Unbounded
     | Empty
 
 
@@ -70,14 +67,35 @@ empty =
     Empty
 
 
+{-| A degenerate Interval.
+-}
+degenerate : Float -> Interval
+degenerate n =
+    Degenerate n
+
+
 {-| An unbounded Interval.
 -}
 unbounded : Interval
 unbounded =
-    Unbounded
+    interval (Inclusive <| -1 / 0) (Inclusive <| 1 / 0)
 
 
-{-| Constructs an `Interval` from two Bounds. Argument order does not matter.
+{-| A right-bounded Interval (from -∞ to some n)
+-}
+rightBounded : Bound -> Interval
+rightBounded b =
+    interval (Inclusive <| -1 / 0) b
+
+
+{-| A left-bounded Interval (from some n to +∞)
+-}
+leftBounded : Bound -> Interval
+leftBounded b =
+    interval b (Inclusive <| 1 / 0)
+
+
+{-| Constructs an `Interval` from two Bounds.
 -}
 interval : Bound -> Bound -> Interval
 interval i j =
@@ -99,33 +117,23 @@ interval i j =
 
             False ->
                 case ( isInfinite t, isInfinite u, t < u ) of
-                    ( False, False, False ) ->
-                        Bounded j i
+                    ( _, _, False ) ->
+                        empty
 
                     ( False, False, True ) ->
                         Bounded i j
 
-                    ( False, True, False ) ->
-                        -- u == -∞
-                        RightBounded i
-
                     ( False, True, True ) ->
                         -- u == +∞
-                        LeftBounded i
-
-                    ( True, False, False ) ->
-                        -- t == +∞
-                        LeftBounded j
+                        leftBounded i
 
                     ( True, False, True ) ->
                         -- t == -∞
-                        RightBounded j
+                        rightBounded j
 
-                    ( True, True, _ ) ->
-                        -- t == +∞, u == -∞
-                        -- or
+                    ( True, True, True ) ->
                         -- t == -∞, u == +∞
-                        Unbounded
+                        unbounded
 
 
 {-| Return a String representation of an Interval.
@@ -133,30 +141,11 @@ interval i j =
 intervalToString : Interval -> String
 intervalToString interval =
     case interval of
-        Unbounded ->
-            "[-∞, ∞]"
-
         Empty ->
             "{}"
 
         Degenerate n ->
             "{" ++ toString n ++ "}"
-
-        LeftBounded b ->
-            case b of
-                Exclusive n ->
-                    "(" ++ toString n ++ ", ∞]"
-
-                Inclusive n ->
-                    "[" ++ toString n ++ ", ∞]"
-
-        RightBounded b ->
-            case b of
-                Exclusive n ->
-                    "[-∞, " ++ toString n ++ ")"
-
-                Inclusive n ->
-                    "[-∞, " ++ toString n ++ "]"
 
         Bounded x y ->
             let
@@ -179,6 +168,74 @@ intervalToString interval =
                 left ++ ", " ++ right
 
 
+{-| Return the minimum of two Bounds.
+NB:
+
+  - `[n < (n`
+
+-}
+minBound : Bound -> Bound -> Bound
+minBound a b =
+    let
+        x =
+            boundValue a
+
+        y =
+            boundValue b
+    in
+        case (x < y) of
+            True ->
+                a
+
+            False ->
+                case (y < x) of
+                    True ->
+                        b
+
+                    False ->
+                        -- x == y
+                        case ( a, b ) of
+                            ( Exclusive _, Exclusive _ ) ->
+                                Exclusive x
+
+                            ( _, _ ) ->
+                                Inclusive x
+
+
+{-| Return the maximum of two Bounds.
+NB:
+
+  - `n) < n]`
+
+-}
+maxBound : Bound -> Bound -> Bound
+maxBound a b =
+    let
+        x =
+            boundValue a
+
+        y =
+            boundValue b
+    in
+        case (x < y) of
+            True ->
+                b
+
+            False ->
+                case (y < x) of
+                    True ->
+                        a
+
+                    False ->
+                        -- x == y
+                        case ( a, b ) of
+                            ( Exclusive _, Exclusive _ ) ->
+                                Exclusive x
+
+                            ( _, _ ) ->
+                                Inclusive x
+
+
 {-| The intersection of two intervals. If the intervals overlap, this is the common part. If not, this is the empty interval.
 -}
 intersection : Interval -> Interval -> Interval
@@ -190,12 +247,6 @@ intersection a b =
         ( _, Empty ) ->
             Empty
 
-        ( _, Unbounded ) ->
-            a
-
-        ( Unbounded, _ ) ->
-            b
-
         ( Degenerate x, Degenerate y ) ->
             case (x == y) of
                 True ->
@@ -204,249 +255,20 @@ intersection a b =
                 False ->
                     Empty
 
-        ( Degenerate x, LeftBounded b ) ->
-            let
-                contained =
-                    case b of
-                        Inclusive w ->
-                            w <= x
+        ( Degenerate w, Bounded y z ) ->
+            interval
+                (maxBound (includes w) y)
+                (minBound (includes w) z)
 
-                        Exclusive w ->
-                            w < x
-            in
-                case contained of
-                    True ->
-                        Degenerate x
+        ( Bounded w x, Degenerate y ) ->
+            interval
+                (maxBound w (includes y))
+                (minBound x (includes y))
 
-                    False ->
-                        Empty
-
-        ( Degenerate x, RightBounded b ) ->
-            let
-                contained =
-                    case b of
-                        Inclusive y ->
-                            x <= y
-
-                        Exclusive y ->
-                            x < y
-            in
-                case contained of
-                    True ->
-                        Degenerate x
-
-                    False ->
-                        Empty
-
-        ( Degenerate x, Bounded lower upper ) ->
-            let
-                contained =
-                    case ( lower, upper ) of
-                        ( Inclusive w, Inclusive y ) ->
-                            w <= x && x <= y
-
-                        ( Inclusive w, Exclusive y ) ->
-                            w <= x && x < y
-
-                        ( Exclusive w, Inclusive y ) ->
-                            w < x && x <= y
-
-                        ( Exclusive w, Exclusive y ) ->
-                            w < x && x < y
-            in
-                case contained of
-                    True ->
-                        Degenerate x
-
-                    False ->
-                        Empty
-
-        ( LeftBounded b, Degenerate y ) ->
-            let
-                contained =
-                    case b of
-                        Inclusive x ->
-                            x <= y
-
-                        Exclusive x ->
-                            x < y
-            in
-                case contained of
-                    True ->
-                        Degenerate y
-
-                    False ->
-                        Empty
-
-        ( RightBounded b, Degenerate y ) ->
-            let
-                contained =
-                    case b of
-                        Inclusive z ->
-                            y <= z
-
-                        Exclusive z ->
-                            y < z
-            in
-                case contained of
-                    True ->
-                        Degenerate y
-
-                    False ->
-                        Empty
-
-        ( Bounded lower upper, Degenerate y ) ->
-            let
-                contained =
-                    case ( lower, upper ) of
-                        ( Inclusive x, Inclusive z ) ->
-                            x <= y && y <= z
-
-                        ( Inclusive x, Exclusive z ) ->
-                            x <= y && y < z
-
-                        ( Exclusive x, Inclusive z ) ->
-                            x < y && y <= z
-
-                        ( Exclusive x, Exclusive z ) ->
-                            x < y && y < z
-            in
-                case contained of
-                    True ->
-                        Degenerate y
-
-                    False ->
-                        Empty
-
-        ( LeftBounded lowerA, LeftBounded lowerB ) ->
-            let
-                a =
-                    boundValue lowerA
-
-                b =
-                    boundValue lowerB
-            in
-                case (a < b) of
-                    True ->
-                        LeftBounded lowerA
-
-                    False ->
-                        Debug.crash "todo"
-
-        ( RightBounded upperA, RightBounded upperB ) ->
-            Debug.crash "todo"
-
-        ( LeftBounded lowerA, RightBounded upperB ) ->
-            Debug.crash "todo"
-
-        ( RightBounded upperA, LeftBounded lowerB ) ->
-            Debug.crash "todo"
-
-        ( Bounded lowerA upperA, LeftBounded lowerB ) ->
-            Debug.crash "todo"
-
-        ( Bounded lowerA upperA, RightBounded upperB ) ->
-            Debug.crash "todo"
-
-        ( LeftBounded lowerA, Bounded lowerB upperB ) ->
-            Debug.crash "todo"
-
-        ( RightBounded upperA, Bounded lowerB upperB ) ->
-            Debug.crash "todo"
-
-        ( Bounded lowerA upperA, Bounded lowerB upperB ) ->
-            case lowerA of
-                Inclusive la ->
-                    case lowerB of
-                        Inclusive lb ->
-                            case upperA of
-                                Inclusive ua ->
-                                    case upperB of
-                                        Inclusive ub ->
-                                            -- [la, ua] ∩ [lb, ub]
-                                            Debug.crash "todo"
-
-                                        Exclusive ub ->
-                                            -- [la, ua] ∩ [lb, ub)
-                                            Debug.crash "todo"
-
-                                Exclusive ua ->
-                                    case upperB of
-                                        Inclusive ub ->
-                                            -- [la, ua) ∩ [lb, ub]
-                                            Debug.crash "todo"
-
-                                        Exclusive ub ->
-                                            -- [la, ua) ∩ [lb, ub)
-                                            Debug.crash "todo"
-
-                        Exclusive lb ->
-                            case upperA of
-                                Inclusive ua ->
-                                    case upperB of
-                                        Inclusive ub ->
-                                            -- [la, ua] ∩ (lb, ub]
-                                            Debug.crash "todo"
-
-                                        Exclusive ub ->
-                                            -- [la, ua] ∩ (lb, ub)
-                                            Debug.crash "todo"
-
-                                Exclusive ua ->
-                                    case upperB of
-                                        Inclusive ub ->
-                                            -- [la, ua) ∩ (lb, ub]
-                                            Debug.crash "todo"
-
-                                        Exclusive ub ->
-                                            -- [la, ua) ∩ (lb, ub)
-                                            Debug.crash "todo"
-
-                Exclusive la ->
-                    case lowerB of
-                        Inclusive lb ->
-                            case upperA of
-                                Inclusive ua ->
-                                    case upperB of
-                                        Inclusive ub ->
-                                            -- (la, ua] ∩ [lb, ub]
-                                            Debug.crash "todo"
-
-                                        Exclusive ub ->
-                                            -- (la, ua] ∩ [lb, ub)
-                                            Debug.crash "todo"
-
-                                Exclusive ua ->
-                                    case upperB of
-                                        Inclusive ub ->
-                                            -- (la, ua) ∩ [lb, ub]
-                                            Debug.crash "todo"
-
-                                        Exclusive ub ->
-                                            -- (la, ua) ∩ [lb, ub)
-                                            Debug.crash "todo"
-
-                        Exclusive lb ->
-                            case upperA of
-                                Inclusive ua ->
-                                    case upperB of
-                                        Inclusive ub ->
-                                            -- (la, ua] ∩ (lb, ub]
-                                            Debug.crash "todo"
-
-                                        Exclusive ub ->
-                                            -- (la, ua] ∩ (lb, ub)
-                                            Debug.crash "todo"
-
-                                Exclusive ua ->
-                                    case upperB of
-                                        Inclusive ub ->
-                                            -- (la, ua) ∩ (lb, ub]
-                                            Debug.crash "todo"
-
-                                        Exclusive ub ->
-                                            -- (la, ua) ∩ (lb, ub)
-                                            Debug.crash "todo"
+        ( Bounded w x, Bounded y z ) ->
+            interval
+                (maxBound w y)
+                (minBound x z)
 
 
 
