@@ -292,7 +292,6 @@ hull a b =
         ( Degenerate x, Degenerate y ) ->
             interval (includes <| min x y) (includes <| max x y)
 
-        --    Interval { min = minEndPoint a.min b.min, max = maxEndPoint a.max b.max }
         ( Degenerate w, Bounded y z ) ->
             interval
                 (minBound (includes w) y)
