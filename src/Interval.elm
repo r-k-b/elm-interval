@@ -20,6 +20,8 @@ module Interval
 
 # Constructors
 
+`interval` is the primary constructor; the others are just for convenience.
+
 @docs interval
 @docs degenerate
 @docs empty
@@ -56,7 +58,8 @@ module Interval
 -}
 
 
-{-| An interval over the extended reals.
+{-| An interval over the reals. May be over either the Ordinary Reals `(-∞, +∞)` or
+the Extended Reals `[-∞, +∞]`.
 `Bounded x y` will always satisfy `x < y`. (`x == y` is either degenerate or empty)
 
 (Opaque type; do not export)
@@ -111,7 +114,10 @@ degenerate n =
     Degenerate n
 
 
-{-| An unbounded Interval.
+{-| An unbounded Interval over the [Extended Reals.] `[-∞, +∞]`
+
+[Extended Reals.]: https://en.wikipedia.org/wiki/Interval_(mathematics)#Infinite_endpoints
+
 -}
 unbounded : Interval
 unbounded =
