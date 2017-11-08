@@ -457,4 +457,12 @@ intersects a b =
 -}
 intersectsPoint : Interval -> Float -> Bool
 intersectsPoint a n =
-    Debug.crash "todo"
+    case a of
+        Empty ->
+            False
+
+        Degenerate x ->
+            x == n
+
+        Bounded w x ->
+            intersection a (degenerate n) == (degenerate n)

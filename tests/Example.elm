@@ -189,4 +189,35 @@ suite =
                     intersects (degenerate 1) (interval (excludes 1) (includes 2))
                         |> Expect.equal False
             ]
+        , describe "point intersection tests"
+            (let
+                a =
+                    interval (includes 1) (excludes 3)
+             in
+                [ test "a" <|
+                    \_ ->
+                        intersectsPoint a 0
+                            |> Expect.equal False
+                , test "b" <|
+                    \_ ->
+                        intersectsPoint a 1
+                            |> Expect.equal True
+                , test "c" <|
+                    \_ ->
+                        intersectsPoint a 3
+                            |> Expect.equal False
+                , test "unbounded a" <|
+                    \_ ->
+                        intersectsPoint unbounded 3
+                            |> Expect.equal True
+                , test "unbounded b" <|
+                    \_ ->
+                        intersectsPoint unbounded (1 / 0)
+                            |> Expect.equal True
+                , test "unbounded c" <|
+                    \_ ->
+                        intersectsPoint unbounded (-1 / 0)
+                            |> Expect.equal True
+                ]
+            )
         ]
