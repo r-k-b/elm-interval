@@ -1,16 +1,33 @@
-module Interval exposing (interval, intervalToString, intersection, includes, excludes, empty, unbounded)
+module Interval
+    exposing
+        ( degenerate
+        , empty
+        , excludes
+        , hull
+        , includes
+        , intersection
+        , interval
+        , intervalToString
+        , leftBounded
+        , rightBounded
+        , unbounded
+        )
 
 {-| A representation of numeric intervals (also known as *ranges*.)
 
 See also [Wikipedia on intervals][WP].
 [WP]: <https://en.wikipedia.org/wiki/Interval_(mathematics)>
 
+@docs degenerate
+@docs empty
+@docs excludes
+@docs hull
+@docs includes
+@docs intersection
 @docs interval
 @docs intervalToString
-@docs intersection
-@docs includes
-@docs excludes
-@docs empty
+@docs leftBounded
+@docs rightBounded
 @docs unbounded
 
 <https://en.wikipedia.org/wiki/Allen%27s_interval_algebra> ?
@@ -81,14 +98,14 @@ unbounded =
     interval (Inclusive <| -1 / 0) (Inclusive <| 1 / 0)
 
 
-{-| A right-bounded Interval (from -∞ to some n)
+{-| Convenience function for a right-bounded Interval (from -∞ to some n)
 -}
 rightBounded : Bound -> Interval
 rightBounded b =
     interval (Inclusive <| -1 / 0) b
 
 
-{-| A left-bounded Interval (from some n to +∞)
+{-| Convenience function for a left-bounded Interval (from some n to +∞)
 -}
 leftBounded : Bound -> Interval
 leftBounded b =
@@ -116,24 +133,12 @@ interval i j =
                         Empty
 
             False ->
-                case ( isInfinite t, isInfinite u, t < u ) of
-                    ( _, _, False ) ->
-                        empty
-
-                    ( False, False, True ) ->
+                case (t < u) of
+                    True ->
                         Bounded i j
 
-                    ( False, True, True ) ->
-                        -- u == +∞
-                        leftBounded i
-
-                    ( True, False, True ) ->
-                        -- t == -∞
-                        rightBounded j
-
-                    ( True, True, True ) ->
-                        -- t == -∞, u == +∞
-                        unbounded
+                    False ->
+                        Empty
 
 
 {-| Return a String representation of an Interval.
@@ -271,14 +276,34 @@ intersection a b =
                 (minBound x z)
 
 
-
-{-
-
-   {-| The convex hull of two intervals. This is similar to union in that it includes all the points of the component intervals,
-   and for non-overlapping intervals, the points between them.
-   -}
-   hull : Interval number -> Interval number -> Interval number
-   hull (Interval a) (Interval b) =
-      Interval { min = minEndPoint a.min b.min, max = maxEndPoint a.max b.max }
-
+{-| The convex hull of two intervals. This is similar to union in that
+it includes all the points of the component intervals, and for
+non-overlapping intervals, the points between them.
 -}
+hull : Interval -> Interval -> Interval
+hull a b =
+    case ( a, b ) of
+        ( Empty, _ ) ->
+            b
+
+        ( _, Empty ) ->
+            a
+
+        ( Degenerate x, Degenerate y ) ->
+            interval (includes <| min x y) (includes <| max x y)
+
+        --    Interval { min = minEndPoint a.min b.min, max = maxEndPoint a.max b.max }
+        ( Degenerate w, Bounded y z ) ->
+            interval
+                (minBound (includes w) y)
+                (maxBound (includes w) z)
+
+        ( Bounded w x, Degenerate y ) ->
+            interval
+                (minBound w (includes y))
+                (maxBound x (includes y))
+
+        ( Bounded w x, Bounded y z ) ->
+            interval
+                (minBound w y)
+                (maxBound x z)
