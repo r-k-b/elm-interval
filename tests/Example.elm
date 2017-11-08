@@ -4,11 +4,13 @@ import Expect exposing (Expectation)
 import Test exposing (describe, test, Test)
 import Interval
     exposing
-        ( degenerate
+        ( closure
+        , degenerate
         , empty
         , excludes
         , hull
         , includes
+        , interior
         , intersection
         , intersects
         , intersectsPoint
@@ -218,6 +220,39 @@ suite =
                     \_ ->
                         intersectsPoint unbounded (-1 / 0)
                             |> Expect.equal True
+                ]
+            )
+        , describe "closure and interior"
+            (let
+                a =
+                    interval (includes 0) (includes 2)
+
+                b =
+                    interval (excludes 0) (excludes 2)
+             in
+                [ test "interior" <|
+                    \_ ->
+                        (b == interior a)
+                            |> Expect.equal True
+                , test "closure" <|
+                    \_ ->
+                        (a == closure b)
+                            |> Expect.equal True
+                , test "interior of degen" <|
+                    \_ ->
+                        interior (degenerate 1)
+                            |> intervalToString
+                            |> Expect.equal "{}"
+                , test "closure of degen" <|
+                    \_ ->
+                        closure (degenerate 1)
+                            |> intervalToString
+                            |> Expect.equal "{1}"
+                , test "closure of empty" <|
+                    \_ ->
+                        closure empty
+                            |> intervalToString
+                            |> Expect.equal "{}"
                 ]
             )
         ]

@@ -1,10 +1,12 @@
 module Interval
     exposing
-        ( degenerate
+        ( closure
+        , degenerate
         , empty
         , excludes
         , hull
         , includes
+        , interior
         , intersection
         , intersects
         , intersectsPoint
@@ -41,6 +43,8 @@ module Interval
 @docs hull
 @docs intersection
 @docs intervalToString
+@docs interior
+@docs closure
 
 
 # Tests on Intervals
@@ -71,9 +75,20 @@ type Interval
     | Empty
 
 
+{-| Opaque type; do not export.
+-}
 type Bound
     = Inclusive Float
     | Exclusive Float
+
+
+{-| A set of strictly non-overlapping Intervals.
+
+Opaque type; do not export.
+
+-}
+type IntervalUnion
+    = Union (List Interval)
 
 
 {-| An inclusive endpoint of an interval.
@@ -472,3 +487,62 @@ intersectsPoint a n =
 
         Bounded w x ->
             intersection a (degenerate n) == (degenerate n)
+
+
+{-| Returns the largest open interval contained within a.
+
+    -- `interior([x, y]) == (x, y)`
+    interior (interval (includes 0) (includes 2)) == interval (excludes 0) (excludes 2)
+
+-}
+interior : Interval -> Interval
+interior a =
+    case a of
+        Empty ->
+            empty
+
+        Degenerate _ ->
+            empty
+
+        Bounded x y ->
+            let
+                t =
+                    boundValue x
+
+                u =
+                    boundValue y
+            in
+                interval (excludes t) (excludes u)
+
+
+{-| Returns the smallest closed interval containing a.
+
+    -- `closure((x, y)) == [x, y]`
+    interior (interval (excludes 0) (excludes 2)) == interval (includes 0) (includes 2)
+
+-}
+closure : Interval -> Interval
+closure a =
+    case a of
+        Empty ->
+            empty
+
+        Degenerate _ ->
+            a
+
+        Bounded x y ->
+            let
+                t =
+                    boundValue x
+
+                u =
+                    boundValue y
+            in
+                interval (includes t) (includes u)
+
+
+{-| The union of two Intervals.
+-}
+union : Interval -> Interval -> IntervalUnion
+union a b =
+    Debug.crash "todo"
