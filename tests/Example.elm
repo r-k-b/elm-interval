@@ -10,6 +10,8 @@ import Interval
         , hull
         , includes
         , intersection
+        , intersects
+        , intersectsPoint
         , interval
         , intervalToString
         , leftBounded
@@ -124,6 +126,11 @@ suite =
                         intersection unbounded b
                             |> intervalToString
                             |> Expect.equal "[2, 9]"
+                , test "degen & bounded (exclusive)" <|
+                    \_ ->
+                        intersection (degenerate 1) (interval (excludes 1) (includes 2))
+                            |> intervalToString
+                            |> Expect.equal "{}"
                 ]
             )
         , describe "hulls"
@@ -164,4 +171,22 @@ suite =
                             |> Expect.equal "[-3, Infinity]"
                 ]
             )
+        , describe "intersection tests"
+            [ test "mismatched degens" <|
+                \_ ->
+                    intersects (degenerate 1) (degenerate 3)
+                        |> Expect.equal False
+            , test "matching degens" <|
+                \_ ->
+                    intersects (degenerate 1) (degenerate 1)
+                        |> Expect.equal True
+            , test "degen & bounded (inclusive)" <|
+                \_ ->
+                    intersects (degenerate 1) (interval (includes 1) (includes 2))
+                        |> Expect.equal True
+            , test "degen & bounded (exclusive)" <|
+                \_ ->
+                    intersects (degenerate 1) (interval (excludes 1) (includes 2))
+                        |> Expect.equal False
+            ]
         ]

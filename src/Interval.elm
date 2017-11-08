@@ -6,6 +6,8 @@ module Interval
         , hull
         , includes
         , intersection
+        , intersects
+        , intersectsPoint
         , interval
         , intervalToString
         , leftBounded
@@ -15,23 +17,41 @@ module Interval
 
 {-| A representation of numeric intervals (also known as *ranges*.)
 
-See also [Wikipedia on intervals][WP].
-[WP]: <https://en.wikipedia.org/wiki/Interval_(mathematics)>
 
+# Constructors
+
+@docs interval
 @docs degenerate
 @docs empty
-@docs excludes
-@docs hull
-@docs includes
-@docs intersection
-@docs interval
-@docs intervalToString
 @docs leftBounded
 @docs rightBounded
 @docs unbounded
 
-<https://en.wikipedia.org/wiki/Allen%27s_interval_algebra> ?
-<https://en.wikipedia.org/wiki/Interval_tree> ?
+
+# Endpoint (Bound) constructors
+
+@docs excludes
+@docs includes
+
+
+# Operations on Intervals
+
+@docs hull
+@docs intersection
+@docs intervalToString
+
+
+# Tests on Intervals
+
+@docs intersects
+@docs intersectsPoint
+
+
+# Related reading
+
+  - [Interval](https://en.wikipedia.org/wiki/Interval_(mathematics))
+  - [Interval tree])<https://en.wikipedia.org/wiki/Interval_tree>)
+  - [Allen's interval algebra](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra)
 
 -}
 
@@ -173,14 +193,15 @@ intervalToString interval =
                 left ++ ", " ++ right
 
 
-{-| Return the minimum of two Bounds.
-NB:
+{-| Return the outer minimum of two Bounds.
 
-  - `[n < (n`
+    minOuterBound (includes 1) (excludes 1) == (includes 1)
+
+    minOuterBound (includes 1) (excludes 0) == (excludes 0)
 
 -}
-minBound : Bound -> Bound -> Bound
-minBound a b =
+minOuterBound : Bound -> Bound -> Bound
+minOuterBound a b =
     let
         x =
             boundValue a
@@ -199,22 +220,18 @@ minBound a b =
 
                     False ->
                         -- x == y
-                        case ( a, b ) of
-                            ( Exclusive _, Exclusive _ ) ->
-                                Exclusive x
-
-                            ( _, _ ) ->
-                                Inclusive x
+                        andInclusives a b
 
 
-{-| Return the maximum of two Bounds.
-NB:
+{-| Return the outer maximum of two Bounds.
 
-  - `n) < n]`
+    maxOuterBound (includes 1) (excludes 1) == (includes 1)
+
+    maxOuterBound (includes 1) (excludes 2) == (excludes 2)
 
 -}
-maxBound : Bound -> Bound -> Bound
-maxBound a b =
+maxOuterBound : Bound -> Bound -> Bound
+maxOuterBound a b =
     let
         x =
             boundValue a
@@ -233,12 +250,97 @@ maxBound a b =
 
                     False ->
                         -- x == y
-                        case ( a, b ) of
-                            ( Exclusive _, Exclusive _ ) ->
-                                Exclusive x
+                        andInclusives a b
 
-                            ( _, _ ) ->
-                                Inclusive x
+
+{-| Return the inner minimum of two Bounds.
+
+    minOuterBound (includes 1) (excludes 1) == (excludes 1)
+
+    minOuterBound (includes 0) (excludes 1) == (includes 0)
+
+-}
+minInnerBound : Bound -> Bound -> Bound
+minInnerBound a b =
+    let
+        x =
+            boundValue a
+
+        y =
+            boundValue b
+    in
+        case (x < y) of
+            True ->
+                a
+
+            False ->
+                case (y < x) of
+                    True ->
+                        b
+
+                    False ->
+                        -- x == y
+                        andExclusives a b
+
+
+{-| Return the inner maximum of two Bounds.
+
+    maxInnerBound (includes 1) (excludes 1) == (excludes 1)
+
+    maxInnerBound (includes 0) (excludes 1) == (includes 0)
+
+-}
+maxInnerBound : Bound -> Bound -> Bound
+maxInnerBound a b =
+    let
+        x =
+            boundValue a
+
+        y =
+            boundValue b
+    in
+        case (x < y) of
+            True ->
+                b
+
+            False ->
+                case (y < x) of
+                    True ->
+                        a
+
+                    False ->
+                        -- x == y
+                        andExclusives a b
+
+
+{-| If either Bound is Exclusive, return that. Else, both are Inclusive; return the first.
+-}
+andInclusives : Bound -> Bound -> Bound
+andInclusives a b =
+    case ( a, b ) of
+        ( Inclusive _, Inclusive _ ) ->
+            a
+
+        ( Exclusive _, _ ) ->
+            a
+
+        ( _, Exclusive _ ) ->
+            b
+
+
+{-| If either Bound is Inclusive, return that. Else, both are Exclusive; return the first.
+-}
+andExclusives : Bound -> Bound -> Bound
+andExclusives a b =
+    case ( a, b ) of
+        ( Exclusive _, Exclusive _ ) ->
+            a
+
+        ( Inclusive _, _ ) ->
+            a
+
+        ( _, Inclusive _ ) ->
+            b
 
 
 {-| The intersection of two intervals. If the intervals overlap, this is the common part. If not, this is the empty interval.
@@ -262,18 +364,18 @@ intersection a b =
 
         ( Degenerate w, Bounded y z ) ->
             interval
-                (maxBound (includes w) y)
-                (minBound (includes w) z)
+                (maxOuterBound (includes w) y)
+                (minOuterBound (includes w) z)
 
         ( Bounded w x, Degenerate y ) ->
             interval
-                (maxBound w (includes y))
-                (minBound x (includes y))
+                (maxOuterBound w (includes y))
+                (minOuterBound x (includes y))
 
         ( Bounded w x, Bounded y z ) ->
             interval
-                (maxBound w y)
-                (minBound x z)
+                (maxOuterBound w y)
+                (minOuterBound x z)
 
 
 {-| The convex hull of two intervals. This is similar to union in that
@@ -294,15 +396,65 @@ hull a b =
 
         ( Degenerate w, Bounded y z ) ->
             interval
-                (minBound (includes w) y)
-                (maxBound (includes w) z)
+                (minOuterBound (includes w) y)
+                (maxOuterBound (includes w) z)
 
         ( Bounded w x, Degenerate y ) ->
             interval
-                (minBound w (includes y))
-                (maxBound x (includes y))
+                (minOuterBound w (includes y))
+                (maxOuterBound x (includes y))
 
         ( Bounded w x, Bounded y z ) ->
             interval
-                (minBound w y)
-                (maxBound x z)
+                (minOuterBound w y)
+                (maxOuterBound x z)
+
+
+{-| Do these two intervals intersect?
+
+    let
+        a = interval (includes 1) (excludes 3)
+        b = interval (includes 2) (includes 4)
+        c = interval (includes 3) (includes 4)
+    in
+        [ intersects a b = True
+        , intersects a c = False
+        ]
+
+-}
+intersects : Interval -> Interval -> Bool
+intersects a b =
+    case ( a, b ) of
+        ( Empty, _ ) ->
+            False
+
+        ( _, Empty ) ->
+            False
+
+        ( Degenerate x, Degenerate y ) ->
+            x == y
+
+        ( Degenerate w, Bounded y z ) ->
+            (intersection a b) == a
+
+        ( Bounded w x, Degenerate y ) ->
+            (intersection a b) == b
+
+        ( Bounded w x, Bounded y z ) ->
+            (intersection a b) /= empty
+
+
+{-| Does this interval contain the given point?
+
+    let
+        a = interval (includes 1) (excludes 3)
+    in
+        [ intersectsPoint a 0 = False
+        , intersectsPoint a 1 = True
+        , intersectsPoint a 3 = False
+        ]
+
+-}
+intersectsPoint : Interval -> Float -> Bool
+intersectsPoint a n =
+    Debug.crash "todo"
