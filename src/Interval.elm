@@ -1,6 +1,7 @@
 module Interval
     exposing
-        ( closure
+        ( Bound
+        , closure
         , degenerate
         , empty
         , excludes
@@ -10,6 +11,7 @@ module Interval
         , intersection
         , intersects
         , intersectsPoint
+        , Interval
         , interval
         , intervalToString
         , leftBounded
@@ -18,6 +20,12 @@ module Interval
         )
 
 {-| A representation of numeric intervals (also known as *ranges*.)
+
+
+# Types
+
+@docs Interval
+@docs Bound
 
 
 # Constructors
@@ -66,7 +74,7 @@ module Interval
 the Extended Reals `[-∞, +∞]`.
 `Bounded x y` will always satisfy `x < y`. (`x == y` is either degenerate or empty)
 
-(Opaque type; do not export)
+(Opaque type; do not export tags)
 
 -}
 type Interval
@@ -75,20 +83,11 @@ type Interval
     | Empty
 
 
-{-| Opaque type; do not export.
+{-| Opaque type; do not export tags.
 -}
 type Bound
     = Inclusive Float
     | Exclusive Float
-
-
-{-| A set of strictly non-overlapping Intervals.
-
-Opaque type; do not export.
-
--}
-type IntervalUnion
-    = Union (List Interval)
 
 
 {-| An inclusive endpoint of an interval.
@@ -539,10 +538,3 @@ closure a =
                     boundValue y
             in
                 interval (includes t) (includes u)
-
-
-{-| The union of two Intervals.
--}
-union : Interval -> Interval -> IntervalUnion
-union a b =
-    Debug.crash "todo"
