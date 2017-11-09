@@ -19,7 +19,9 @@ module Interval
         , isDegenerate
         , isEmpty
         , isLeftBounded
+        , isLeftOpen
         , isRightBounded
+        , isRightOpen
         , leftBounded
         , lowerBoundValue
         , rightBounded
@@ -75,6 +77,8 @@ module Interval
 @docs isEmpty
 @docs isLeftBounded
 @docs isRightBounded
+@docs isLeftOpen
+@docs isRightOpen
 
 
 # Related reading
@@ -432,18 +436,18 @@ hull a b =
 
         ( Degenerate w, Bounded y z ) ->
             interval
-                (minOuterBound (includes w) y)
-                (maxOuterBound (includes w) z)
+                (minInnerBound (includes w) y)
+                (maxInnerBound (includes w) z)
 
         ( Bounded w x, Degenerate y ) ->
             interval
-                (minOuterBound w (includes y))
-                (maxOuterBound x (includes y))
+                (minInnerBound w (includes y))
+                (maxInnerBound x (includes y))
 
         ( Bounded w x, Bounded y z ) ->
             interval
-                (minOuterBound w y)
-                (maxOuterBound x z)
+                (minInnerBound w y)
+                (maxInnerBound x z)
 
 
 {-| Extract the value of the lower bound of an Interval.
@@ -651,6 +655,8 @@ isOpenBound b =
             True
 
 
+{-| Is the lower bound of this interval open?
+-}
 isLeftOpen : Interval -> Bool
 isLeftOpen a =
     case a of
@@ -664,6 +670,8 @@ isLeftOpen a =
             isOpenBound lower
 
 
+{-| Is the upper bound of this interval open?
+-}
 isRightOpen : Interval -> Bool
 isRightOpen a =
     case a of
