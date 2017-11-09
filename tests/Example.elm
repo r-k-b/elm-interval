@@ -4,7 +4,8 @@ import Expect exposing (Expectation)
 import Test exposing (describe, test, Test)
 import Interval
     exposing
-        ( closure
+        ( adjoins
+        , closure
         , degenerate
         , empty
         , excludes
@@ -253,6 +254,42 @@ suite =
                         closure empty
                             |> intervalToString
                             |> Expect.equal "{}"
+                ]
+            )
+        , describe "adjoint intervals"
+            (let
+                a =
+                    -- [1, 3)
+                    interval (includes 1) (excludes 3)
+
+                b =
+                    -- [3, 4]
+                    interval (includes 3) (includes 4)
+
+                c =
+                    -- (3, 4]
+                    interval (includes 5) (includes 8)
+
+                d =
+                    -- [2, 3]
+                    interval (includes 5) (includes 8)
+             in
+                [ test "adj [1, 3) [3, 4]" <|
+                    \_ ->
+                        adjoins a b
+                            |> Expect.equal True
+                , test "adj [1, 3) (3, 4]" <|
+                    \_ ->
+                        adjoins a c
+                            |> Expect.equal False
+                , test "adj [1, 3) [2, 3]" <|
+                    \_ ->
+                        adjoins a d
+                            |> Expect.equal False
+                , test "adj [2, 3] [3, 4]" <|
+                    \_ ->
+                        adjoins b d
+                            |> Expect.equal False
                 ]
             )
         ]

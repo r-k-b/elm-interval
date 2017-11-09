@@ -1,6 +1,7 @@
 module Interval
     exposing
-        ( Bound
+        ( adjoins
+        , Bound
         , closure
         , degenerate
         , empty
@@ -14,9 +15,16 @@ module Interval
         , Interval
         , interval
         , intervalToString
+        , isBounded
+        , isDegenerate
+        , isEmpty
+        , isLeftBounded
+        , isRightBounded
         , leftBounded
+        , lowerBoundValue
         , rightBounded
         , unbounded
+        , upperBoundValue
         )
 
 {-| A representation of numeric intervals (also known as *ranges*.)
@@ -53,12 +61,20 @@ module Interval
 @docs intervalToString
 @docs interior
 @docs closure
+@docs upperBoundValue
+@docs lowerBoundValue
 
 
 # Tests on Intervals
 
+@docs adjoins
 @docs intersects
 @docs intersectsPoint
+@docs isBounded
+@docs isDegenerate
+@docs isEmpty
+@docs isLeftBounded
+@docs isRightBounded
 
 
 # Related reading
@@ -430,6 +446,36 @@ hull a b =
                 (maxOuterBound x z)
 
 
+{-| Extract the value of the lower bound of an Interval.
+-}
+lowerBoundValue : Interval -> Maybe Float
+lowerBoundValue a =
+    case a of
+        Empty ->
+            Nothing
+
+        Degenerate n ->
+            Just n
+
+        Bounded l u ->
+            Just <| boundValue l
+
+
+{-| Extract the value of the upper bound of an Interval.
+-}
+upperBoundValue : Interval -> Maybe Float
+upperBoundValue a =
+    case a of
+        Empty ->
+            Nothing
+
+        Degenerate n ->
+            Just n
+
+        Bounded l u ->
+            Just <| boundValue l
+
+
 {-| Do these two intervals intersect?
 
     let
@@ -464,6 +510,55 @@ intersects a b =
             (intersection a b) /= empty
 
 
+{-| Are these two intervals adjoins? I.e., do they share an upper-lower or
+lower-upper bound, exactly one of which is closed, and do not intersect each other?
+
+    let
+        a = interval (includes 1) (excludes 3)  -- [1, 3)
+        b = interval (includes 2) (includes 4)  -- [3, 4]
+        c = interval (includes 3) (includes 4)  -- (3, 4]
+        d = interval (includes 3) (includes 4)  -- [2, 3]
+    in
+        [ adjoins a b = True
+        , adjoins a c = False
+        , adjoins a d = False
+        ]
+
+-}
+adjoins : Interval -> Interval -> Bool
+adjoins a b =
+    case ( a, b ) of
+        ( Empty, _ ) ->
+            False
+
+        ( _, Empty ) ->
+            False
+
+        ( Degenerate x, Degenerate y ) ->
+            False
+
+        ( Degenerate w, Bounded y z ) ->
+            (isOpenBound y && w == boundValue y) || (isOpenBound z && w == boundValue z)
+
+        ( Bounded w x, Degenerate y ) ->
+            (isOpenBound w && y == boundValue w) || (isOpenBound x && y == boundValue x)
+
+        ( Bounded w x, Bounded y z ) ->
+            let
+                ( wOpen, xOpen, yOpen, zOpen ) =
+                    ( isOpenBound w, isOpenBound x, isOpenBound y, isOpenBound z )
+
+                upperLowerMatch =
+                    (xOpen |> xor yOpen)
+                        && (boundValue x == boundValue y)
+
+                lowerUpperMatch =
+                    (wOpen |> xor zOpen)
+                        && (boundValue w == boundValue z)
+            in
+                not (a |> intersects b) && (upperLowerMatch || lowerUpperMatch)
+
+
 {-| Does this interval contain the given point?
 
     let
@@ -486,6 +581,100 @@ intersectsPoint a n =
 
         Bounded w x ->
             intersection a (degenerate n) == (degenerate n)
+
+
+{-| Does this interval have finite bounds?
+-}
+isBounded : Interval -> Bool
+isBounded a =
+    Debug.crash "todo"
+
+
+{-| Is this a degenerate (point-valued) interval?
+-}
+isDegenerate : Interval -> Bool
+isDegenerate a =
+    Debug.crash "todo"
+
+
+{-| Is this an empty interval?
+-}
+isEmpty : Interval -> Bool
+isEmpty a =
+    case a of
+        Empty ->
+            True
+
+        Degenerate _ ->
+            False
+
+        Bounded _ _ ->
+            False
+
+
+{-| Does this interval have a finite lower bound, and an infinite upper bound?
+-}
+isLeftBounded : Interval -> Bool
+isLeftBounded a =
+    Debug.crash "todo"
+
+
+{-| Does this interval have a finite upper bound, and an infinite lower bound?
+-}
+isRightBounded : Interval -> Bool
+isRightBounded a =
+    Debug.crash "todo"
+
+
+{-| Is this interval unbounded?
+-}
+isUnbounded : Interval -> Bool
+isUnbounded a =
+    case a of
+        Empty ->
+            False
+
+        Degenerate _ ->
+            False
+
+        Bounded lower upper ->
+            (isInfinite <| boundValue lower) && (isInfinite <| boundValue upper)
+
+
+isOpenBound : Bound -> Bool
+isOpenBound b =
+    case b of
+        Inclusive _ ->
+            False
+
+        Exclusive _ ->
+            True
+
+
+isLeftOpen : Interval -> Bool
+isLeftOpen a =
+    case a of
+        Empty ->
+            False
+
+        Degenerate _ ->
+            False
+
+        Bounded lower upper ->
+            isOpenBound lower
+
+
+isRightOpen : Interval -> Bool
+isRightOpen a =
+    case a of
+        Empty ->
+            False
+
+        Degenerate _ ->
+            False
+
+        Bounded lower upper ->
+            isOpenBound upper
 
 
 {-| Returns the largest open interval contained within a.
