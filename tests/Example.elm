@@ -139,7 +139,7 @@ suite =
         , describe "hulls"
             (let
                 a =
-                    interval (includes -1) (includes 3)
+                    interval (includes -1) (excludes 3)
 
                 b =
                     interval (includes 2) (includes 9)
@@ -172,6 +172,11 @@ suite =
                         hull (leftBounded <| includes 1) (degenerate -3)
                             |> intervalToString
                             |> Expect.equal "[-3, Infinity]"
+                , test "adjoint to degen" <|
+                    \_ ->
+                        hull a (degenerate 3)
+                            |> intervalToString
+                            |> Expect.equal "[-1, 3]"
                 ]
             )
         , describe "intersection tests"
@@ -289,6 +294,18 @@ suite =
                 , test "adj [2, 3] [3, 4]" <|
                     \_ ->
                         adjoins b d
+                            |> Expect.equal False
+                , test "adj [1, 3) {2}" <|
+                    \_ ->
+                        adjoins a (degenerate 2)
+                            |> Expect.equal False
+                , test "adj [1, 3) {3}" <|
+                    \_ ->
+                        adjoins a (degenerate 3)
+                            |> Expect.equal True
+                , test "adj [1, 3) {4}" <|
+                    \_ ->
+                        adjoins a (degenerate 4)
                             |> Expect.equal False
                 ]
             )

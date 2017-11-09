@@ -1,6 +1,7 @@
 module Union
     exposing
         ( fromInterval
+        , fromIntervals
         , Union
         , union
         , unionOfIntervals
@@ -19,6 +20,7 @@ import Interval
         , intersects
         , intervalToString
         , isEmpty
+        , isLeftOpen
         , lowerBoundValue
         )
 
@@ -55,6 +57,25 @@ fromInterval a =
 
         False ->
             Union [ a ]
+
+
+{-| Additively construct a union from an unordered list of arbitrary Intervals.
+-}
+fromIntervals : List Interval -> Union
+fromIntervals intervals =
+    fromIntervalsHelp (Union []) intervals
+
+
+fromIntervalsHelp : Union -> List Interval -> Union
+fromIntervalsHelp acc intervals =
+    case intervals of
+        [] ->
+            acc
+
+        next :: rest ->
+            fromIntervalsHelp
+                (union acc <| fromInterval next)
+                rest
 
 
 {-| If the union can be represented as a single Interval, return that interval.
@@ -108,7 +129,7 @@ unionHelp acc last a b =
                         unionHelp acc maybeNextInterval restAs restBs
 
         Just theLast ->
-            -- do we know theLast does not intersect acc?
+            -- do we know theLast does not intersect or adjoin acc?
             case ( a, b ) of
                 ( [], [] ) ->
                     List.append acc [ theLast ]
@@ -167,6 +188,9 @@ intersectsOrAdjoins a b =
 
 {-| Compare the lower bounds of the first two Intervals in each List, return
 the interval with the lowest, along with the rest of the Lists.
+
+todo: replace all `List Interval` with `Union` in type sig
+
 -}
 pickNextInterval : List Interval -> List Interval -> ( Maybe Interval, List Interval, List Interval )
 pickNextInterval a b =
@@ -182,17 +206,28 @@ pickNextInterval a b =
 
         ( nextA :: restAs, nextB :: restBs ) ->
             let
-                nextA_lte_nextB =
-                    Maybe.map2 (<=) (lowerBoundValue nextA) (lowerBoundValue nextB)
+                nextA_cmp_nextB =
+                    Maybe.map2 compare (lowerBoundValue nextA) (lowerBoundValue nextB)
             in
-                case (nextA_lte_nextB) of
+                case (nextA_cmp_nextB) of
                     Nothing ->
                         Debug.crash "Unions must never contain Empty intervals!"
 
-                    Just True ->
+                    Just LT ->
                         ( Just nextA, restAs, b )
 
-                    Just False ->
+                    Just EQ ->
+                        case ( isLeftOpen nextA, isLeftOpen nextB ) of
+                            ( False, _ ) ->
+                                ( Just nextA, restAs, b )
+
+                            ( _, False ) ->
+                                ( Just nextB, a, restBs )
+
+                            ( _, _ ) ->
+                                ( Just nextA, restAs, b )
+
+                    Just GT ->
                         ( Just nextB, a, restBs )
 
 
