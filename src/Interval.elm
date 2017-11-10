@@ -596,14 +596,30 @@ intersectsPoint a n =
 -}
 isBounded : Interval -> Bool
 isBounded a =
-    Debug.crash "todo"
+    case a of
+        Empty ->
+            False
+
+        Degenerate x ->
+            not <| isInfinite x
+
+        Bounded x y ->
+            not <| isInfinite (boundValue x) || isInfinite (boundValue y)
 
 
 {-| Is this a degenerate (point-valued) interval?
 -}
 isDegenerate : Interval -> Bool
 isDegenerate a =
-    Debug.crash "todo"
+    case a of
+        Degenerate _ ->
+            True
+
+        Empty ->
+            False
+
+        Bounded _ _ ->
+            False
 
 
 {-| Is this an empty interval?
@@ -625,14 +641,30 @@ isEmpty a =
 -}
 isLeftBounded : Interval -> Bool
 isLeftBounded a =
-    Debug.crash "todo"
+    case a of
+        Empty ->
+            False
+
+        Degenerate x ->
+            False
+
+        Bounded x y ->
+            (not <| isInfinite (boundValue x)) && isInfinite (boundValue y)
 
 
 {-| Does this interval have a finite upper bound, and an infinite lower bound?
 -}
 isRightBounded : Interval -> Bool
 isRightBounded a =
-    Debug.crash "todo"
+    case a of
+        Empty ->
+            False
+
+        Degenerate x ->
+            False
+
+        Bounded x y ->
+            (not <| isInfinite (boundValue y)) && isInfinite (boundValue x)
 
 
 {-| Is this interval unbounded?

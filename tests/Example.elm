@@ -17,6 +17,10 @@ import Interval
         , intersectsPoint
         , interval
         , intervalToString
+        , isBounded
+        , isDegenerate
+        , isLeftBounded
+        , isRightBounded
         , leftBounded
         , rightBounded
         , unbounded
@@ -309,4 +313,108 @@ suite =
                             |> Expect.equal False
                 ]
             )
+        , describe "isBounded"
+            [ test "empty" <|
+                \_ ->
+                    isBounded empty
+                        |> Expect.equal False
+            , test "bounded" <|
+                \_ ->
+                    isBounded (interval (includes 1) (includes 3))
+                        |> Expect.equal True
+            , test "left-bounded" <|
+                \_ ->
+                    isBounded (leftBounded (includes 1))
+                        |> Expect.equal False
+            , test "right-bounded" <|
+                \_ ->
+                    isBounded (rightBounded (includes 1))
+                        |> Expect.equal False
+            , test "unbounded" <|
+                \_ ->
+                    isBounded unbounded
+                        |> Expect.equal False
+            , test "degen" <|
+                \_ ->
+                    isBounded (degenerate 1)
+                        |> Expect.equal True
+            , test "infinity degen" <|
+                \_ ->
+                    isBounded (degenerate <| 1 / 0)
+                        |> Expect.equal False
+            ]
+        , describe "isDegenerate"
+            [ test "empty" <|
+                \_ ->
+                    isDegenerate empty
+                        |> Expect.equal False
+            , test "bounded" <|
+                \_ ->
+                    isDegenerate (interval (includes 1) (includes 3))
+                        |> Expect.equal False
+            , test "degen" <|
+                \_ ->
+                    isDegenerate (degenerate 1)
+                        |> Expect.equal True
+            ]
+        , describe "isLeftBounded"
+            [ test "empty" <|
+                \_ ->
+                    isLeftBounded empty
+                        |> Expect.equal False
+            , test "bounded" <|
+                \_ ->
+                    isLeftBounded (interval (includes 1) (includes 3))
+                        |> Expect.equal False
+            , test "left-bounded" <|
+                \_ ->
+                    isLeftBounded (leftBounded (includes 1))
+                        |> Expect.equal True
+            , test "right-bounded" <|
+                \_ ->
+                    isLeftBounded (rightBounded (includes 1))
+                        |> Expect.equal False
+            , test "unbounded" <|
+                \_ ->
+                    isLeftBounded unbounded
+                        |> Expect.equal False
+            , test "degen" <|
+                \_ ->
+                    isLeftBounded (degenerate 1)
+                        |> Expect.equal False
+            , test "infinity degen" <|
+                \_ ->
+                    isLeftBounded (degenerate <| 1 / 0)
+                        |> Expect.equal False
+            ]
+        , describe "isRightBounded"
+            [ test "empty" <|
+                \_ ->
+                    isRightBounded empty
+                        |> Expect.equal False
+            , test "bounded" <|
+                \_ ->
+                    isRightBounded (interval (includes 1) (includes 3))
+                        |> Expect.equal False
+            , test "left-bounded" <|
+                \_ ->
+                    isRightBounded (leftBounded (includes 1))
+                        |> Expect.equal False
+            , test "right-bounded" <|
+                \_ ->
+                    isRightBounded (rightBounded (includes 1))
+                        |> Expect.equal True
+            , test "unbounded" <|
+                \_ ->
+                    isRightBounded unbounded
+                        |> Expect.equal False
+            , test "degen" <|
+                \_ ->
+                    isRightBounded (degenerate 1)
+                        |> Expect.equal False
+            , test "infinity degen" <|
+                \_ ->
+                    isRightBounded (degenerate <| 1 / 0)
+                        |> Expect.equal False
+            ]
         ]
