@@ -2,6 +2,8 @@ module Union
     exposing
         ( fromInterval
         , fromIntervals
+        , intersection
+        , intersectionWithInterval
         , Union
         , union
         , unionOfIntervals
@@ -9,7 +11,24 @@ module Union
         , subtract
         )
 
-{-| A set of strictly non-overlapping Intervals.
+{-| A set of strictly ordered, fully disjoint Intervals.
+
+
+# Types
+
+@docs Union
+
+@docs fromInterval
+@docs fromIntervals
+
+@docs union
+@docs unionOfIntervals
+
+@docs intersection
+@docs intersectionWithInterval
+@docs subtract
+@docs unionToString
+
 -}
 
 import Interval
@@ -96,9 +115,9 @@ toInterval (Union intervals) =
 {-| Merge two Unions.
 E.g.:
 
-  - { [1, 2) } ∪ [3, 4] = { [1, 2), [3, 4] }
-  - { [1, 2) } ∪ [2, 3] = { [1, 3] }
-  - { [1, 2) } ∪ (2, 3] = { [1, 2), (2, 3] }
+  - { [1, 2) } ∪ { [3, 4] } = { [1, 2), [3, 4] }
+  - { [1, 2) } ∪ { [2, 3] } = { [1, 3] }
+  - { [1, 2) } ∪ { (2, 3] } = { [1, 2), (2, 3] }
 
 -}
 union : Union -> Union -> Union
@@ -106,6 +125,27 @@ union (Union a) (Union b) =
     Union <| unionHelp [] Nothing a b
 
 
+empty : Union
+empty =
+    Union []
+
+
+{-| Reduce a Union from the left.
+
+    foldl (::) Union.empty todo_something == todo_somethingElse
+
+-}
+foldl : (Interval -> b -> b) -> b -> Union -> b
+foldl func acc (Union intervals) =
+    List.foldl func acc intervals
+
+
+{-| Construct a Union from the additive merger of two Intervals.
+E.g.:
+
+  - [1, 2) ∪ [3, 4] = { [1, 2), [3, 4] }
+
+-}
 unionOfIntervals : Interval -> Interval -> Union
 unionOfIntervals a b =
     union (fromInterval a) (fromInterval b)
@@ -238,6 +278,8 @@ subtract a b =
     Debug.crash "todo"
 
 
+{-| Return the string representation of the given Union.
+-}
 unionToString : Union -> String
 unionToString (Union intervals) =
     case intervals of
@@ -253,6 +295,24 @@ unionToString (Union intervals) =
                 "{ " ++ intervalString ++ " }"
 
 
+{-| Return the intersection of an interval with a Union.
+E.g.:
+
+  - [1, 2) ∩ { [3, 5] } = {}
+  - [1, 3) ∩ { [2, 5] } = { [2, 3) }
+  - [2, 5] ∩ { [1, 3), [4, 6] } = { [2, 3), [4, 5] }
+
+-}
+intersectionWithInterval : Interval -> Union -> Union
+intersectionWithInterval mainInterval theUnion =
+    let
+        func : Interval -> Union -> Union
+        func eachInterval acc =
+            union acc (fromInterval <| Interval.intersection eachInterval mainInterval)
+    in
+        foldl func empty theUnion
+
+
 {-| Return the intersection of two Unions.
 E.g.:
 
@@ -261,6 +321,20 @@ E.g.:
   - { [1, 3), [4, 6] } ∩ { [2, 5] } = { [2, 3), [4, 5] }
 
 -}
-intersect : Union -> Union -> Union
-intersect a b =
-    Debug.crash "todo"
+intersection : Union -> Union -> Union
+intersection a b =
+    intersectionHelp (Union []) a b
+
+
+intersectionHelp : Union -> Union -> Union -> Union
+intersectionHelp acc (Union a) b =
+    case a of
+        [] ->
+            acc
+
+        nextA :: restAs ->
+            let
+                newAcc =
+                    union acc (intersectionWithInterval nextA b)
+            in
+                intersectionHelp newAcc (Union restAs) b

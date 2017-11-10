@@ -1,7 +1,7 @@
 module TestUnions exposing (suite)
 
 import Expect exposing (Expectation)
-import Test exposing (Test, describe, test, todo)
+import Test exposing (Test, describe, skip, test, todo)
 import Interval
     exposing
         ( degenerate
@@ -10,11 +10,14 @@ import Interval
         , includes
         , interval
         , intervalToString
+        , unbounded
         )
 import Union
     exposing
         ( fromInterval
         , fromIntervals
+        , intersection
+        , intersectionWithInterval
         , union
         , unionOfIntervals
         , unionToString
@@ -44,6 +47,21 @@ d =
 e =
     -- [5, 6)
     interval (includes 5) (excludes 6)
+
+
+f =
+    -- [1, 3)
+    interval (includes 1) (excludes 3)
+
+
+g =
+    -- [4, 6]
+    interval (includes 4) (includes 6)
+
+
+h =
+    -- [7, 8]
+    interval (includes 7) (includes 8)
 
 
 suite : Test
@@ -117,8 +135,58 @@ suite =
                         |> unionToString
                         |> Expect.equal "{ [1, 4] }"
             ]
+        , describe "intersections of single intervals with unions"
+            [ test "[5, 6) ∩ { [1, 2), [3, 4] }" <|
+                --  e          a       b
+                \_ ->
+                    intersectionWithInterval e (unionOfIntervals a b)
+                        |> unionToString
+                        |> Expect.equal "{}"
+            , test "[-Infinity, Infinity] ∩ { [1, 2), [3, 4] }" <|
+                --                            a       b
+                \_ ->
+                    intersectionWithInterval unbounded (unionOfIntervals a b)
+                        |> unionToString
+                        |> Expect.equal "{ [1, 2), [3, 4] }"
+            , test "(2, 5] ∩ { [1, 3), [4, 6] }" <|
+                --  d          f       g
+                \_ ->
+                    intersectionWithInterval d (unionOfIntervals f g)
+                        |> unionToString
+                        |> Expect.equal "{ (2, 3), [4, 5] }"
+            ]
         , describe "intersections of unions"
-            [ todo "{ [1, 2), [3, 4] } ∪ { [5, 6) }" ]
+            [ test "{ [1, 2), [3, 4] } ∩ { [5, 6), [7, 8] }" <|
+                --    a       b            e       h
+                \_ ->
+                    intersection (unionOfIntervals a b) (fromIntervals [ e, h ])
+                        |> unionToString
+                        |> Expect.equal "{}"
+            , test "{ [1, 2), [3, 4] } ∩ { [5, 6) }" <|
+                --    a       b            e
+                \_ ->
+                    intersection (unionOfIntervals a b) (fromInterval e)
+                        |> unionToString
+                        |> Expect.equal "{}"
+            , test "{ [1, 2), [3, 4] } ∩ { [2, 3] }" <|
+                --    a       b            c
+                \_ ->
+                    intersection (unionOfIntervals a b) (fromInterval c)
+                        |> unionToString
+                        |> Expect.equal "{ {3} }"
+            , test "{ [1, 2), [3, 4] } ∩ { [-Infinity, Infinity] }" <|
+                --    a       b
+                \_ ->
+                    intersection (unionOfIntervals a b) (fromInterval unbounded)
+                        |> unionToString
+                        |> Expect.equal "{ [1, 2), [3, 4] }"
+            , test "{ [1, 3), [4, 6] } ∩ { (2, 5] }" <|
+                --    f       g            d
+                \_ ->
+                    intersection (unionOfIntervals f g) (fromInterval d)
+                        |> unionToString
+                        |> Expect.equal "{ (2, 3), [4, 5] }"
+            ]
         , describe "unions from arbitrary unordered lists"
             [ test "already ordered, all valid, no intersections" <|
                 -- [ [1, 2), [3, 4], [5, 6), {7} ]
