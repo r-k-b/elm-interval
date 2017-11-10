@@ -18,6 +18,9 @@ import Union
         , fromIntervals
         , intersection
         , intersectionWithInterval
+        , subtract
+        , subtractInterval
+        , subtractUnions
         , union
         , unionOfIntervals
         , unionToString
@@ -230,5 +233,70 @@ suite =
                     fromIntervals [ a, d, degenerate 2 ]
                         |> unionToString
                         |> Expect.equal "{ [1, 5] }"
+            ]
+        , describe "subtracting intervals from intervals"
+            [ test "prime example" <|
+                -- [1, 3) - (1, 2]
+                let
+                    expected =
+                        "{ {1}, (2, 3) }"
+
+                    a =
+                        interval (includes 1) (excludes 3)
+
+                    b =
+                        interval (excludes 1) (includes 2)
+                in
+                    \_ ->
+                        subtract a b
+                            |> unionToString
+                            |> Expect.equal expected
+            ]
+        , describe "subtracting intervals from unions"
+            [ test "prime example" <|
+                -- { [1, 3), (5, 8] } - (1, 3)
+                --   f
+                let
+                    expected =
+                        "{ {1}, (5, 8] }"
+
+                    i =
+                        fromIntervals
+                            [ f
+                            , interval (excludes 5) (includes 8)
+                            ]
+
+                    u =
+                        interval (excludes 1) (excludes 3)
+                in
+                    \_ ->
+                        subtractInterval u i
+                            |> unionToString
+                            |> Expect.equal expected
+            ]
+        , describe "subtracting unions"
+            [ test "prime example" <|
+                -- { [1, 3), (5, 8] } - { (1, 3), [6, 7] }
+                --   f
+                let
+                    expected =
+                        "{ {1}, (5, 6), (7, 8] }"
+
+                    ua =
+                        fromIntervals
+                            [ f
+                            , interval (excludes 5) (includes 8)
+                            ]
+
+                    ub =
+                        fromIntervals
+                            [ interval (excludes 1) (excludes 3)
+                            , interval (includes 6) (includes 7)
+                            ]
+                in
+                    \_ ->
+                        subtractUnions ua ub
+                            |> unionToString
+                            |> Expect.equal expected
             ]
         ]

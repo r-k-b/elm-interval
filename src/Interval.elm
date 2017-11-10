@@ -25,6 +25,7 @@ module Interval
         , leftBounded
         , lowerBoundValue
         , rightBounded
+        , subtract
         , unbounded
         , upperBoundValue
         )
@@ -63,6 +64,7 @@ module Interval
 @docs intervalToString
 @docs interior
 @docs closure
+@docs subtract
 @docs upperBoundValue
 @docs lowerBoundValue
 
@@ -772,3 +774,61 @@ closure a =
                     boundValue y
             in
                 interval (includes t) (includes u)
+
+
+{-| Subtract interval `b` from interval `a`, returning a list of the parts of
+`a` that did not intersect with `b`.
+
+E.g.:
+
+  - [1, 3) - (1, 2] = [ {1}, (2, 3) ]
+
+-}
+subtract : Interval -> Interval -> List Interval
+subtract a b =
+    if (a |> intersects b) then
+        case ( a, b ) of
+            ( _, Empty ) ->
+                [ a ]
+
+            ( Empty, _ ) ->
+                []
+
+            ( Degenerate w, _ ) ->
+                []
+
+            ( Bounded w x, Degenerate y ) ->
+                -- ?w, x? - {y} = [ ?w, y), (y, x? ]
+                [ interval w (excludes y)
+                , interval (excludes y) x
+                ]
+
+            ( Bounded w x, Bounded y z ) ->
+                let
+                    left =
+                        if (minInnerBound w y == w && w /= y) then
+                            [ interval w (invertBound y) ]
+                        else
+                            []
+
+                    right =
+                        if (maxInnerBound x z == x && x /= z) then
+                            [ interval (invertBound z) x ]
+                        else
+                            []
+                in
+                    List.append left right
+    else
+        [ a ]
+
+
+{-| Hold the bound value steady, but invert the open/closed property.
+-}
+invertBound : Bound -> Bound
+invertBound b =
+    case b of
+        Inclusive n ->
+            Exclusive n
+
+        Exclusive n ->
+            Inclusive n

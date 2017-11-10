@@ -9,6 +9,8 @@ module Union
         , unionOfIntervals
         , unionToString
         , subtract
+        , subtractInterval
+        , subtractUnions
         )
 
 {-| A set of strictly ordered, fully disjoint Intervals.
@@ -27,6 +29,8 @@ module Union
 @docs intersection
 @docs intersectionWithInterval
 @docs subtract
+@docs subtractInterval
+@docs subtractUnions
 @docs unionToString
 
 -}
@@ -271,10 +275,42 @@ pickNextInterval a b =
                         ( Just nextB, a, restBs )
 
 
-{-| Subtract union `b` from union `a`, returning the contents of `a` that did not intersect with `b`.
+{-| Subtract interval `b` from interval `a`, returning the parts of
+`a` that did not intersect with `b`.
+
+E.g.:
+
+  - [1, 3) - (1, 2] = { {1}, (2, 3) }
+
 -}
-subtract : Union -> Union -> Union
+subtract : Interval -> Interval -> Union
 subtract a b =
+    fromIntervals <| Interval.subtract a b
+
+
+{-| Subtract an interval from the given union, returning the contents of the
+union that did not intersect with the interval.
+
+E.g.:
+
+  - { [1, 3), (5, 8] } - (1, 3) = { {1}, (5, 8] }
+
+-}
+subtractInterval : Interval -> Union -> Union
+subtractInterval u i =
+    Debug.crash "todo"
+
+
+{-| Subtract union `b` from union `a`, returning the contents of `a` that
+did not intersect with `b`.
+
+E.g.:
+
+  - { [1, 3), (5, 8] } - { (1, 3), [6, 7] } = { {1}, (5, 6), (7, 8] }
+
+-}
+subtractUnions : Union -> Union -> Union
+subtractUnions a b =
     Debug.crash "todo"
 
 
