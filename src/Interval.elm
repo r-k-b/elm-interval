@@ -83,8 +83,8 @@ module Interval
 
 # Related reading
 
-  - [Interval](https://en.wikipedia.org/wiki/Interval_(mathematics))
-  - [Interval tree])<https://en.wikipedia.org/wiki/Interval_tree>)
+  - [Interval](<https://en.wikipedia.org/wiki/Interval_(mathematics)>
+  - [Interval tree](https://en.wikipedia.org/wiki/Interval_tree)
   - [Allen's interval algebra](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra)
 
 -}
@@ -94,7 +94,7 @@ module Interval
 the Extended Reals `[-∞, +∞]`.
 `Bounded x y` will always satisfy `x < y`. (`x == y` is either degenerate or empty)
 
-(Opaque type; do not export tags)
+Opaque type.
 
 -}
 type Interval
@@ -103,7 +103,12 @@ type Interval
     | Empty
 
 
-{-| Opaque type; do not export tags.
+{-| Represents an upper or lower, closed or open endpoint of an Interval.
+This encompasses the "endpoints" of unbounded intervals when the bound value
+is either of the `Infinity` values in the floating point spec.
+
+Opaque type.
+
 -}
 type Bound
     = Inclusive Float
