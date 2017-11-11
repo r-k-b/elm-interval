@@ -297,8 +297,22 @@ E.g.:
 
 -}
 subtractInterval : Interval -> Union -> Union
-subtractInterval u i =
-    Debug.crash "todo"
+subtractInterval i u =
+    subtractIntervalHelp empty i u
+
+
+subtractIntervalHelp : Union -> Interval -> Union -> Union
+subtractIntervalHelp acc i u =
+    case u of
+        Union [] ->
+            acc
+
+        Union (next :: rest) ->
+            let
+                newAcc =
+                    union acc (subtract next i)
+            in
+                subtractIntervalHelp newAcc i (Union rest)
 
 
 {-| Subtract union `b` from union `a`, returning the contents of `a` that
@@ -310,8 +324,20 @@ E.g.:
 
 -}
 subtractUnions : Union -> Union -> Union
-subtractUnions a b =
-    Debug.crash "todo"
+subtractUnions (Union a) (Union b) =
+    case ( a, b ) of
+        ( _, [] ) ->
+            Union a
+
+        ( [], _ ) ->
+            empty
+
+        ( _, nextB :: restBs ) ->
+            let
+                diff =
+                    subtractInterval nextB (Union a)
+            in
+                subtractUnions diff (Union restBs)
 
 
 {-| Return the string representation of the given Union.
