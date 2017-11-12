@@ -1,6 +1,6 @@
 {
-    "version": "1.2.0",
-    "summary": "Interval algebra.",
+    "version": "2.0.0",
+    "summary": "Intervals for Elm. Handles Unions, Intersections, and intervals with any combination of open / closed bounds.",
     "repository": "https://github.com/r-k-b/elm-interval.git",
     "license": "MIT",
     "source-directories": [
