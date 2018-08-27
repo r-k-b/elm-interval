@@ -390,7 +390,8 @@ andExclusives a b =
             b
 
 
-{-| The intersection of two intervals. If the intervals overlap, this is the common part. If not, this is the empty interval.
+{-| The intersection of two intervals. If the intervals overlap, this is the common part.
+    If not, this is the empty interval.
 -}
 intersection : Interval -> Interval -> Interval
 intersection a b =
@@ -527,8 +528,8 @@ lower-upper bound, exactly one of which is closed, and do not intersect each oth
     let
         a = interval (includes 1) (excludes 3)  -- [1, 3)
         b = interval (includes 2) (includes 4)  -- [3, 4]
-        c = interval (includes 3) (includes 4)  -- (3, 4]
-        d = interval (includes 3) (includes 4)  -- [2, 3]
+        c = interval (excludes 3) (includes 4)  -- (3, 4]
+        d = interval (includes 2) (includes 3)  -- [2, 3]
     in
         [ adjoins a b = True
         , adjoins a c = False
