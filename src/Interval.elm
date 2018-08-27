@@ -85,7 +85,7 @@ module Interval
 
 # Related reading
 
-  - [Interval](<https://en.wikipedia.org/wiki/Interval_(mathematics)>
+  - [Interval](<https://en.wikipedia.org/wiki/Interval_(mathematics)>)
   - [Interval tree](https://en.wikipedia.org/wiki/Interval_tree)
   - [Allen's interval algebra](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra)
 
