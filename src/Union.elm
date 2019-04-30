@@ -254,7 +254,7 @@ pickNextInterval a b =
             in
             case nextA_cmp_nextB of
                 Nothing ->
-                    Debug.crash "Unions must never contain Empty intervals!"
+                    Debug.todo "Unions must never contain Empty intervals!"
 
                 Just LT ->
                     ( Just nextA, restAs, b )

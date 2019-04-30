@@ -212,31 +212,31 @@ interval i j =
 {-| Return a String representation of an Interval.
 -}
 intervalToString : Interval -> String
-intervalToString interval =
-    case interval of
+intervalToString interval_val =
+    case interval_val of
         Empty ->
             "{}"
 
         Degenerate n ->
-            "{" ++ String.fromInt n ++ "}"
+            "{" ++ String.fromFloat n ++ "}"
 
         Bounded x y ->
             let
                 left =
                     case x of
                         Exclusive n ->
-                            "(" ++ String.fromInt n
+                            "(" ++ String.fromFloat n
 
                         Inclusive n ->
-                            "[" ++ String.fromInt n
+                            "[" ++ String.fromFloat n
 
                 right =
                     case y of
                         Exclusive n ->
-                            String.fromInt n ++ ")"
+                            String.fromFloat n ++ ")"
 
                         Inclusive n ->
-                            String.fromInt n ++ "]"
+                            String.fromFloat n ++ "]"
             in
             left ++ ", " ++ right
 
@@ -558,8 +558,8 @@ adjoins a b =
 
         ( Bounded w x, Bounded y z ) ->
             let
-                ( wOpen, xOpen, yOpen, zOpen ) =
-                    ( isOpenBound w, isOpenBound x, isOpenBound y, isOpenBound z )
+                ( ( wOpen, xOpen ), ( yOpen, zOpen ) ) =
+                    ( ( isOpenBound w, isOpenBound x ), ( isOpenBound y, isOpenBound z ) )
 
                 upperLowerMatch =
                     (xOpen |> xor yOpen)
