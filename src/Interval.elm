@@ -90,6 +90,8 @@ module Interval exposing
 
 -}
 
+import String
+
 
 {-| An interval over the reals. May be over either the Ordinary Reals `(-∞, +∞)` or
 the Extended Reals `[-∞, +∞]`.
@@ -216,25 +218,25 @@ intervalToString interval =
             "{}"
 
         Degenerate n ->
-            "{" ++ toString n ++ "}"
+            "{" ++ String.fromInt n ++ "}"
 
         Bounded x y ->
             let
                 left =
                     case x of
                         Exclusive n ->
-                            "(" ++ toString n
+                            "(" ++ String.fromInt n
 
                         Inclusive n ->
-                            "[" ++ toString n
+                            "[" ++ String.fromInt n
 
                 right =
                     case y of
                         Exclusive n ->
-                            toString n ++ ")"
+                            String.fromInt n ++ ")"
 
                         Inclusive n ->
-                            toString n ++ "]"
+                            String.fromInt n ++ "]"
             in
             left ++ ", " ++ right
 
