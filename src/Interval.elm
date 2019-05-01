@@ -1,36 +1,35 @@
-module Interval
-    exposing
-        ( adjoins
-        , Bound
-        , closure
-        , degenerate
-        , empty
-        , excludes
-        , hull
-        , includes
-        , interior
-        , intersection
-        , intersects
-        , intersectsPoint
-        , Interval
-        , interval
-        , intervalToString
-        , isBounded
-        , isDegenerate
-        , isEmpty
-        , isLeftBounded
-        , isLeftOpen
-        , isRightBounded
-        , isRightOpen
-        , leftBounded
-        , lowerBoundValue
-        , rightBounded
-        , subtract
-        , unbounded
-        , upperBoundValue
-        )
+module Interval exposing
+    ( Interval
+    , Bound
+    , interval
+    , degenerate
+    , empty
+    , leftBounded
+    , rightBounded
+    , unbounded
+    , excludes
+    , includes
+    , hull
+    , intersection
+    , intervalToString
+    , interior
+    , closure
+    , subtract
+    , upperBoundValue
+    , lowerBoundValue
+    , adjoins
+    , intersects
+    , intersectsPoint
+    , isBounded
+    , isDegenerate
+    , isEmpty
+    , isLeftBounded
+    , isRightBounded
+    , isLeftOpen
+    , isRightOpen
+    )
 
-{-| A representation of numeric intervals (also known as *ranges*.)
+{-| A representation of numeric intervals (also known as _ranges_.)
 
 
 # Types
@@ -85,11 +84,13 @@ module Interval
 
 # Related reading
 
-  - [Interval](<https://en.wikipedia.org/wiki/Interval_(mathematics)>)
+  - [Interval](https://en.wikipedia.org/wiki/Interval_(mathematics))
   - [Interval tree](https://en.wikipedia.org/wiki/Interval_tree)
   - [Allen's interval algebra](https://en.wikipedia.org/wiki/Allen%27s_interval_algebra)
 
 -}
+
+import String
 
 
 {-| An interval over the reals. May be over either the Ordinary Reals `(-∞, +∞)` or
@@ -190,61 +191,61 @@ interval i j =
         u =
             boundValue j
     in
-        case (t == u) of
-            True ->
-                case ( i, j ) of
-                    ( Inclusive _, Inclusive _ ) ->
-                        Degenerate t
+    case t == u of
+        True ->
+            case ( i, j ) of
+                ( Inclusive _, Inclusive _ ) ->
+                    Degenerate t
 
-                    ( _, _ ) ->
-                        Empty
+                ( _, _ ) ->
+                    Empty
 
-            False ->
-                case (t < u) of
-                    True ->
-                        Bounded i j
+        False ->
+            case t < u of
+                True ->
+                    Bounded i j
 
-                    False ->
-                        Empty
+                False ->
+                    Empty
 
 
 {-| Return a String representation of an Interval.
 -}
 intervalToString : Interval -> String
-intervalToString interval =
-    case interval of
+intervalToString interval_val =
+    case interval_val of
         Empty ->
             "{}"
 
         Degenerate n ->
-            "{" ++ toString n ++ "}"
+            "{" ++ String.fromFloat n ++ "}"
 
         Bounded x y ->
             let
                 left =
                     case x of
                         Exclusive n ->
-                            "(" ++ toString n
+                            "(" ++ String.fromFloat n
 
                         Inclusive n ->
-                            "[" ++ toString n
+                            "[" ++ String.fromFloat n
 
                 right =
                     case y of
                         Exclusive n ->
-                            toString n ++ ")"
+                            String.fromFloat n ++ ")"
 
                         Inclusive n ->
-                            toString n ++ "]"
+                            String.fromFloat n ++ "]"
             in
-                left ++ ", " ++ right
+            left ++ ", " ++ right
 
 
 {-| Return the outer minimum of two Bounds.
 
-    minOuterBound (includes 1) (excludes 1) == (includes 1)
+    minOuterBound (includes 1) (excludes 1) == includes 1
 
-    minOuterBound (includes 1) (excludes 0) == (excludes 0)
+    minOuterBound (includes 1) (excludes 0) == excludes 0
 
 -}
 minOuterBound : Bound -> Bound -> Bound
@@ -256,25 +257,25 @@ minOuterBound a b =
         y =
             boundValue b
     in
-        case (x < y) of
-            True ->
-                a
+    case x < y of
+        True ->
+            a
 
-            False ->
-                case (y < x) of
-                    True ->
-                        b
+        False ->
+            case y < x of
+                True ->
+                    b
 
-                    False ->
-                        -- x == y
-                        andInclusives a b
+                False ->
+                    -- x == y
+                    andInclusives a b
 
 
 {-| Return the outer maximum of two Bounds.
 
-    maxOuterBound (includes 1) (excludes 1) == (includes 1)
+    maxOuterBound (includes 1) (excludes 1) == includes 1
 
-    maxOuterBound (includes 1) (excludes 2) == (excludes 2)
+    maxOuterBound (includes 1) (excludes 2) == excludes 2
 
 -}
 maxOuterBound : Bound -> Bound -> Bound
@@ -286,25 +287,25 @@ maxOuterBound a b =
         y =
             boundValue b
     in
-        case (x < y) of
-            True ->
-                b
+    case x < y of
+        True ->
+            b
 
-            False ->
-                case (y < x) of
-                    True ->
-                        a
+        False ->
+            case y < x of
+                True ->
+                    a
 
-                    False ->
-                        -- x == y
-                        andInclusives a b
+                False ->
+                    -- x == y
+                    andInclusives a b
 
 
 {-| Return the inner minimum of two Bounds.
 
-    minOuterBound (includes 1) (excludes 1) == (excludes 1)
+    minOuterBound (includes 1) (excludes 1) == excludes 1
 
-    minOuterBound (includes 0) (excludes 1) == (includes 0)
+    minOuterBound (includes 0) (excludes 1) == includes 0
 
 -}
 minInnerBound : Bound -> Bound -> Bound
@@ -316,25 +317,25 @@ minInnerBound a b =
         y =
             boundValue b
     in
-        case (x < y) of
-            True ->
-                a
+    case x < y of
+        True ->
+            a
 
-            False ->
-                case (y < x) of
-                    True ->
-                        b
+        False ->
+            case y < x of
+                True ->
+                    b
 
-                    False ->
-                        -- x == y
-                        andExclusives a b
+                False ->
+                    -- x == y
+                    andExclusives a b
 
 
 {-| Return the inner maximum of two Bounds.
 
-    maxInnerBound (includes 1) (excludes 1) == (excludes 1)
+    maxInnerBound (includes 1) (excludes 1) == excludes 1
 
-    maxInnerBound (includes 0) (excludes 1) == (includes 0)
+    maxInnerBound (includes 0) (excludes 1) == includes 0
 
 -}
 maxInnerBound : Bound -> Bound -> Bound
@@ -346,18 +347,18 @@ maxInnerBound a b =
         y =
             boundValue b
     in
-        case (x < y) of
-            True ->
-                b
+    case x < y of
+        True ->
+            b
 
-            False ->
-                case (y < x) of
-                    True ->
-                        a
+        False ->
+            case y < x of
+                True ->
+                    a
 
-                    False ->
-                        -- x == y
-                        andExclusives a b
+                False ->
+                    -- x == y
+                    andExclusives a b
 
 
 {-| If either Bound is Exclusive, return that. Else, both are Inclusive; return the first.
@@ -391,7 +392,7 @@ andExclusives a b =
 
 
 {-| The intersection of two intervals. If the intervals overlap, this is the common part.
-    If not, this is the empty interval.
+If not, this is the empty interval.
 -}
 intersection : Interval -> Interval -> Interval
 intersection a b =
@@ -403,7 +404,7 @@ intersection a b =
             Empty
 
         ( Degenerate x, Degenerate y ) ->
-            case (x == y) of
+            case x == y of
                 True ->
                     Degenerate x
 
@@ -513,13 +514,13 @@ intersects a b =
             x == y
 
         ( Degenerate w, Bounded y z ) ->
-            (intersection a b) == a
+            intersection a b == a
 
         ( Bounded w x, Degenerate y ) ->
-            (intersection a b) == b
+            intersection a b == b
 
         ( Bounded w x, Bounded y z ) ->
-            (intersection a b) /= empty
+            intersection a b /= empty
 
 
 {-| Are these two intervals adjoins? I.e., do they share an upper-lower or
@@ -557,8 +558,8 @@ adjoins a b =
 
         ( Bounded w x, Bounded y z ) ->
             let
-                ( wOpen, xOpen, yOpen, zOpen ) =
-                    ( isOpenBound w, isOpenBound x, isOpenBound y, isOpenBound z )
+                ( ( wOpen, xOpen ), ( yOpen, zOpen ) ) =
+                    ( ( isOpenBound w, isOpenBound x ), ( isOpenBound y, isOpenBound z ) )
 
                 upperLowerMatch =
                     (xOpen |> xor yOpen)
@@ -568,7 +569,7 @@ adjoins a b =
                     (wOpen |> xor zOpen)
                         && (boundValue w == boundValue z)
             in
-                not (a |> intersects b) && (upperLowerMatch || lowerUpperMatch)
+            not (a |> intersects b) && (upperLowerMatch || lowerUpperMatch)
 
 
 {-| Does this interval contain the given point?
@@ -592,7 +593,7 @@ intersectsPoint a n =
             x == n
 
         Bounded w x ->
-            intersection a (degenerate n) == (degenerate n)
+            intersection a (degenerate n) == degenerate n
 
 
 {-| Does this interval have finite bounds?
@@ -748,7 +749,7 @@ interior a =
                 u =
                     boundValue y
             in
-                interval (excludes t) (excludes u)
+            interval (excludes t) (excludes u)
 
 
 {-| Returns the smallest closed interval containing a.
@@ -774,7 +775,7 @@ closure a =
                 u =
                     boundValue y
             in
-                interval (includes t) (includes u)
+            interval (includes t) (includes u)
 
 
 {-| Subtract interval `b` from interval `a`, returning a list of the parts of
@@ -787,7 +788,7 @@ E.g.:
 -}
 subtract : Interval -> Interval -> List Interval
 subtract a b =
-    if (a |> intersects b) then
+    if a |> intersects b then
         case ( a, b ) of
             ( _, Empty ) ->
                 [ a ]
@@ -807,18 +808,21 @@ subtract a b =
             ( Bounded w x, Bounded y z ) ->
                 let
                     left =
-                        if (minInnerBound w y == w && w /= y) then
+                        if minInnerBound w y == w && w /= y then
                             [ interval w (invertBound y) ]
+
                         else
                             []
 
                     right =
-                        if (maxInnerBound x z == x && x /= z) then
+                        if maxInnerBound x z == x && x /= z then
                             [ interval (invertBound z) x ]
+
                         else
                             []
                 in
-                    List.append left right
+                List.append left right
+
     else
         [ a ]
 
