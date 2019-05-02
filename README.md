@@ -8,7 +8,7 @@ combination of open / closed bounds.
 # What is an interval?
 
 An open interval does not include its endpoints, and is indicated with 
-parentheses. For example, (0,1) means greater than 0 and less than 1. 
+parentheses. For example, `(0,1)` means greater than 0 and less than 1. 
 A closed interval is an interval which includes all its limit points, and is 
 denoted with square brackets. For example, `[0,1]` means greater than or equal
 to 0 and less than or equal to 1. A half-open interval includes only one of
