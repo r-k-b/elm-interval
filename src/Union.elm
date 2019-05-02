@@ -155,6 +155,9 @@ unionOfIntervals a b =
 
 
 {-| All intervals must be sorted on their lower bounds, smallest first!
+
+If the `List Interval`s contain any empty intervals, the correctness of the result is not guaranteed.
+
 -}
 unionHelp : List Interval -> Maybe Interval -> List Interval -> List Interval -> List Interval
 unionHelp acc last a b =
@@ -232,7 +235,10 @@ intersectsOrAdjoins a b =
 {-| Compare the lower bounds of the first two Intervals in each List, return
 the interval with the lowest, along with the rest of the Lists.
 
-todo: replace all `List Interval` with `Union` in type sig
+If the `List Interval`s contain any empty intervals, the correctness of the
+result is not guaranteed.
+
+todo: replace all `List Interval` with `Union` in type signature
 
 -}
 pickNextInterval : List Interval -> List Interval -> ( Maybe Interval, List Interval, List Interval )
@@ -254,7 +260,12 @@ pickNextInterval a b =
             in
             case nextA_cmp_nextB of
                 Nothing ->
-                    Debug.todo "Unions must never contain Empty intervals!"
+                    {- Unions must never contain Empty intervals, and the
+                       opaque type enforces it, but it's not clear how to
+                       make that impossible and avoid this case via the type
+                       system.
+                    -}
+                    ( Nothing, restAs, restBs )
 
                 Just LT ->
                     ( Just nextA, restAs, b )
