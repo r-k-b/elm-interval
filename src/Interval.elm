@@ -486,7 +486,7 @@ upperBoundValue a =
             Just n
 
         Bounded l u ->
-            Just <| boundValue l
+            Just <| boundValue u
 
 
 {-| Do these two intervals intersect?
