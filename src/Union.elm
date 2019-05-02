@@ -10,6 +10,7 @@ module Union exposing
     , subtractInterval
     , subtractUnions
     , unionToString
+    , toIntervals
     )
 
 {-| A set of strictly ordered, fully disjoint Intervals.
@@ -141,6 +142,13 @@ empty =
 foldl : (Interval -> b -> b) -> b -> Union -> b
 foldl func acc (Union intervals) =
     List.foldl func acc intervals
+
+
+{-| Returns list of intervals
+-}
+toIntervals : Union -> List Interval
+toIntervals (Union intervals) =
+    intervals
 
 
 {-| Construct a Union from the additive merger of two Intervals.
