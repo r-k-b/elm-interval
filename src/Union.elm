@@ -2,6 +2,7 @@ module Union exposing
     ( Union
     , fromInterval
     , fromIntervals
+    , toIntervals
     , union
     , unionOfIntervals
     , intersection
@@ -10,7 +11,6 @@ module Union exposing
     , subtractInterval
     , subtractUnions
     , unionToString
-    , toIntervals
     )
 
 {-| A set of strictly ordered, fully disjoint Intervals.
@@ -22,6 +22,7 @@ module Union exposing
 
 @docs fromInterval
 @docs fromIntervals
+@docs toIntervals
 
 @docs union
 @docs unionOfIntervals
