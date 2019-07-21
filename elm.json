@@ -1,7 +1,7 @@
 {
     "type": "package",
     "name": "r-k-b/elm-interval",
-    "summary": "Intervals for Elm. Handles ∩, -, ∪ ops with any combo of open / closed bounds.",
+    "summary": "Intervals for Elm. Handles ∩, -, ∪ with any combo of open / closed bounds.",
     "license": "MIT",
     "version": "2.1.0",
     "exposed-modules": [
