@@ -1,7 +1,6 @@
 module TestUnions exposing (suite)
 
 import Expect exposing (Expectation)
-import Test exposing (Test, describe, skip, test, todo)
 import Interval
     exposing
         ( degenerate
@@ -12,6 +11,7 @@ import Interval
         , intervalToString
         , unbounded
         )
+import Test exposing (Test, describe, skip, test, todo)
 import Union
     exposing
         ( fromInterval
@@ -247,10 +247,10 @@ suite =
                     b =
                         interval (excludes 1) (includes 2)
                 in
-                    \_ ->
-                        subtract a b
-                            |> unionToString
-                            |> Expect.equal expected
+                \_ ->
+                    subtract a b
+                        |> unionToString
+                        |> Expect.equal expected
             ]
         , describe "subtracting intervals from unions"
             [ test "prime example" <|
@@ -269,10 +269,10 @@ suite =
                     u =
                         interval (excludes 1) (excludes 3)
                 in
-                    \_ ->
-                        subtractInterval u i
-                            |> unionToString
-                            |> Expect.equal expected
+                \_ ->
+                    subtractInterval u i
+                        |> unionToString
+                        |> Expect.equal expected
             ]
         , describe "subtracting unions"
             [ test "prime example" <|
@@ -294,9 +294,9 @@ suite =
                             , interval (includes 6) (includes 7)
                             ]
                 in
-                    \_ ->
-                        subtractUnions ua ub
-                            |> unionToString
-                            |> Expect.equal expected
+                \_ ->
+                    subtractUnions ua ub
+                        |> unionToString
+                        |> Expect.equal expected
             ]
         ]
