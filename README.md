@@ -1,6 +1,8 @@
 
 # elm-interval
 
+![.github/workflows/make.yml](https://github.com/r-k-b/elm-interval/workflows/.github/workflows/make.yml/badge.svg)
+
 Intervals for Elm. Handles Unions, Intersections, and intervals with any 
 combination of open / closed bounds.
 
