@@ -8,10 +8,9 @@ import Interval
         , excludes
         , includes
         , interval
-        , intervalToString
         , unbounded
         )
-import Test exposing (Test, describe, skip, test, todo)
+import Test exposing (Test, describe, test)
 import Union
     exposing
         ( fromInterval
@@ -241,14 +240,14 @@ suite =
                     expected =
                         "{ {1}, (2, 3) }"
 
-                    a =
+                    first =
                         interval (includes 1) (excludes 3)
 
-                    b =
+                    second =
                         interval (excludes 1) (includes 2)
                 in
                 \_ ->
-                    subtract a b
+                    subtract first second
                         |> unionToString
                         |> Expect.equal expected
             ]
