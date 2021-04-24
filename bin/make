@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo Checking formatting...
+check-format
+
+echo Testing...
+tests
+
+# todo: run elm-review rules

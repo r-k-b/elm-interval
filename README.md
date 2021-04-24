@@ -47,10 +47,21 @@ unbounded intervals, so that the closed intervals coincide with closed sets in
 that topology.
 
 
+# developing
+
+Recommended dependencies:
+
+- Nix
+- direnv
+
+Run `direnv allow` once, then `make`.
+
+
 # todos
 
 In roughly descending order of priority:
 
 - [ ] add examples of real use cases to the readme (potentially replacing the "What is an interval?" filler)
-- [ ] sort out the build / test systems (using make or npm?)
+- [ ] sort out the build / test systems (using make or npm, or nix?)
+  - [ ] replace the nodejs config in `.github/workflows/make.yml` with nix
 - [ ] implement Interval Trees
