@@ -23,6 +23,6 @@
     "chokidar-cli": "^3.0.0",
     "elm": "^0.19.1-5",
     "elm-format": "^0.8.5",
-    "elm-test": "^0.19.1-revision4"
+    "elm-test": "^0.19.1-revision11"
   }
 }
