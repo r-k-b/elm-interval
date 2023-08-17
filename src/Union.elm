@@ -2,7 +2,6 @@ module Union exposing
     ( Union
     , fromInterval
     , fromIntervals
-    , toIntervals
     , union
     , unionOfIntervals
     , intersection
@@ -10,7 +9,9 @@ module Union exposing
     , subtract
     , subtractInterval
     , subtractUnions
+    , toIntervals
     , unionToString
+    , lowerBound, upperBound
     )
 
 {-| A set of strictly ordered, fully disjoint Intervals.
@@ -20,9 +21,14 @@ module Union exposing
 
 @docs Union
 
+
+# Constructors
+
 @docs fromInterval
 @docs fromIntervals
-@docs toIntervals
+
+
+# Operations on Unions
 
 @docs union
 @docs unionOfIntervals
@@ -32,10 +38,16 @@ module Union exposing
 @docs subtract
 @docs subtractInterval
 @docs subtractUnions
+
+
+# Conversion
+
+@docs toIntervals
 @docs unionToString
 
 -}
 
+import Bound exposing (Bound)
 import Interval
     exposing
         ( Interval
@@ -419,3 +431,33 @@ intersectionHelp acc (Union a) b =
                     union acc (intersectionWithInterval nextA b)
             in
             intersectionHelp newAcc (Union restAs) b
+
+
+lowerBound : Union -> Maybe Bound
+lowerBound (Union a) =
+    case a of
+        [] ->
+            Nothing
+
+        h :: _ ->
+            Interval.leftBound h
+
+
+upperBound : Union -> Maybe Bound
+upperBound (Union a) =
+    let
+        helper : Interval -> List Interval -> Maybe Bound
+        helper head tail =
+            case tail of
+                [] ->
+                    Interval.rightBound head
+
+                nextHead :: nextTail ->
+                    helper nextHead nextTail
+    in
+    case a of
+        [] ->
+            Nothing
+
+        head :: tail ->
+            helper head tail

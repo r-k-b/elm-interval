@@ -25,6 +25,7 @@ module Interval exposing
     , isRightBounded
     , isLeftOpen
     , isRightOpen
+    , leftBound, rightBound
     , excludes, includes
     )
 
@@ -73,6 +74,7 @@ module Interval exposing
 @docs isRightBounded
 @docs isLeftOpen
 @docs isRightOpen
+@docs leftBound, rightBound
 
 
 # Deprecated functions
@@ -558,6 +560,42 @@ isRightOpen a =
 
         Bounded _ upper ->
             Bound.isOpen upper
+
+
+{-| Returns the left (lower) bound of the interval, returns `Nothing` if it's empty.
+
+    leftBound (interval (includes 0) (excludes 1)) == Just (includes 0)
+
+-}
+leftBound : Interval -> Maybe Bound
+leftBound a =
+    case a of
+        Empty ->
+            Nothing
+
+        Degenerate f ->
+            Just <| Inclusive f
+
+        Bounded l _ ->
+            Just l
+
+
+{-| Returns the right (upper) bound of the interval, returns `Nothing` if it's empty.
+
+    rightBound (interval (includes 0) (excludes 1)) == Just (excludes 1)
+
+-}
+rightBound : Interval -> Maybe Bound
+rightBound a =
+    case a of
+        Empty ->
+            Nothing
+
+        Degenerate f ->
+            Just <| Inclusive f
+
+        Bounded _ r ->
+            Just r
 
 
 {-| Returns the largest open interval contained within a.
