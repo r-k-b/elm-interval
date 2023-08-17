@@ -26,6 +26,7 @@ module Interval exposing
     , isLeftOpen
     , isRightOpen
     , leftBound, rightBound
+    , plus, negate, minus
     , excludes, includes
     )
 
@@ -75,6 +76,11 @@ module Interval exposing
 @docs isLeftOpen
 @docs isRightOpen
 @docs leftBound, rightBound
+
+
+# Arithmetic functions
+
+@docs plus, negate, minus
 
 
 # Deprecated functions
@@ -698,3 +704,68 @@ subtract a b =
 
     else
         [ a ]
+
+
+plus : Interval -> Interval -> Interval
+plus l r =
+    let
+        boundPlusFloat : Bound -> Float -> Bound
+        boundPlusFloat bound f =
+            case bound of
+                Inclusive n ->
+                    Inclusive (f + n)
+
+                Exclusive n ->
+                    Exclusive (f + n)
+
+        boundPlusBound : Bound -> Bound -> Bound
+        boundPlusBound lbound rbound =
+            case ( lbound, rbound ) of
+                ( Inclusive lb, Inclusive rb ) ->
+                    Inclusive (lb + rb)
+
+                ( Inclusive lb, Exclusive rb ) ->
+                    Exclusive (lb + rb)
+
+                ( Exclusive lb, Inclusive rb ) ->
+                    Exclusive (lb + rb)
+
+                ( Exclusive lb, Exclusive rb ) ->
+                    Exclusive (lb + rb)
+    in
+    case ( l, r ) of
+        ( Empty, _ ) ->
+            Empty
+
+        ( _, Empty ) ->
+            Empty
+
+        ( Degenerate lf, Degenerate rf ) ->
+            Degenerate (lf + rf)
+
+        ( Bounded ll lu, Degenerate rf ) ->
+            Bounded (boundPlusFloat ll rf) (boundPlusFloat lu rf)
+
+        ( Degenerate lf, Bounded rl ru ) ->
+            Bounded (boundPlusFloat rl lf) (boundPlusFloat ru lf)
+
+        ( Bounded ll lu, Bounded rl ru ) ->
+            Bounded (boundPlusBound ll rl) (boundPlusBound lu ru)
+
+
+negate : Interval -> Interval
+negate l =
+    case l of
+        Empty ->
+            Empty
+
+        Bounded lower upper ->
+            Bounded (Bound.negate upper) (Bound.negate lower)
+
+        Degenerate f ->
+            Degenerate -f
+
+
+minus : Interval -> Interval -> Interval
+minus l r =
+    plus l (negate r)

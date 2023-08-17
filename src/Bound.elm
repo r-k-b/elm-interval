@@ -1,7 +1,7 @@
 module Bound exposing
     ( Bound(..)
     , minOuter, maxOuter, minInner, maxInner
-    , invert
+    , invert, negate
     , value, isOpen
     )
 
@@ -16,7 +16,7 @@ module Bound exposing
 # Operations on Bounds
 
 @docs minOuter, maxOuter, minInner, maxInner
-@docs invert
+@docs invert, negate
 
 
 # Tests on Bounds
@@ -60,6 +60,18 @@ invert b =
 
         Exclusive n ->
             Inclusive n
+
+
+{-| Hold the open/closed property, but invert the value.
+-}
+negate : Bound -> Bound
+negate b =
+    case b of
+        Inclusive n ->
+            Inclusive -n
+
+        Exclusive n ->
+            Exclusive -n
 
 
 {-| Whether the bound is open (exclusive) or closed (inclusive).
