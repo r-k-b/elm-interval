@@ -307,4 +307,20 @@ suite =
                         |> unionToString
                         |> Expect.equal expected
             ]
+        , describe "lower and upper bounds"
+            [ describe "one interval"
+                [ test "lowerBound" <|
+                    \_ ->
+                        Interval.interval (includes 0) (excludes 1)
+                            |> Union.fromInterval
+                            |> Union.lowerBound
+                            |> Expect.equal (Just <| includes 0)
+                , test "upperBound" <|
+                    \_ ->
+                        Interval.interval (includes 0) (excludes 1)
+                            |> Union.fromInterval
+                            |> Union.upperBound
+                            |> Expect.equal (Just <| excludes 1)
+                ]
+            ]
         ]
