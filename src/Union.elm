@@ -180,7 +180,7 @@ unionHelp acc last a b =
                 Nothing ->
                     acc
 
-                Just nextInterval ->
+                Just _ ->
                     unionHelp acc maybeNextInterval restAs restBs
 
         Just theLast ->
@@ -213,7 +213,7 @@ unionHelp acc last a b =
                             in
                             unionHelp nextAcc (Just nextA) restAs []
 
-                ( _, _ ) ->
+                _ ->
                     let
                         ( maybeNextInterval, restAs, restBs ) =
                             pickNextInterval a b
@@ -287,7 +287,7 @@ pickNextInterval a b =
                         ( _, False ) ->
                             ( Just nextB, a, restBs )
 
-                        ( _, _ ) ->
+                        _ ->
                             ( Just nextA, restAs, b )
 
                 Just GT ->
