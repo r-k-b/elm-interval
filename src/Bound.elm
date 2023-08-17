@@ -92,18 +92,14 @@ minOuter a b =
         y =
             value b
     in
-    case x < y of
-        True ->
-            a
+    if x < y then
+        a
 
-        False ->
-            case y < x of
-                True ->
-                    b
+    else if y < x then
+        b
 
-                False ->
-                    -- x == y
-                    andInclusives a b
+    else
+        andInclusives a b
 
 
 {-| Return the outer maximum of two Bounds.
@@ -124,18 +120,14 @@ maxOuter a b =
         y =
             value b
     in
-    case x < y of
-        True ->
-            b
+    if x < y then
+        b
 
-        False ->
-            case y < x of
-                True ->
-                    a
+    else if y < x then
+        a
 
-                False ->
-                    -- x == y
-                    andInclusives a b
+    else
+        andInclusives a b
 
 
 {-| Return the inner minimum of two Bounds.
@@ -156,18 +148,14 @@ minInner a b =
         y =
             value b
     in
-    case x < y of
-        True ->
-            a
+    if x < y then
+        a
 
-        False ->
-            case y < x of
-                True ->
-                    b
+    else if y < x then
+        b
 
-                False ->
-                    -- x == y
-                    andExclusives a b
+    else
+        andExclusives a b
 
 
 {-| Return the inner maximum of two Bounds.
@@ -188,18 +176,14 @@ maxInner a b =
         y =
             value b
     in
-    case x < y of
-        True ->
-            b
+    if x < y then
+        b
 
-        False ->
-            case y < x of
-                True ->
-                    a
+    else if y < x then
+        a
 
-                False ->
-                    -- x == y
-                    andExclusives a b
+    else
+        andExclusives a b
 
 
 {-| If either Bound is Exclusive, return that. Else, both are Inclusive; return the first.

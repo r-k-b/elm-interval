@@ -87,12 +87,11 @@ intervalUnion a b =
 -}
 fromInterval : Interval -> Union
 fromInterval a =
-    case isEmpty a of
-        True ->
-            Union []
+    if isEmpty a then
+        Union []
 
-        False ->
-            Union [ a ]
+    else
+        Union [ a ]
 
 
 {-| Additively construct a union from an unordered list of arbitrary Intervals.
@@ -202,28 +201,26 @@ unionHelp acc last a b =
                     List.append acc [ theLast ]
 
                 ( [], nextB :: restBs ) ->
-                    case nextB |> intersectsOrAdjoins theLast of
-                        True ->
-                            unionHelp acc (Just <| hull nextB theLast) [] restBs
+                    if nextB |> intersectsOrAdjoins theLast then
+                        unionHelp acc (Just <| hull nextB theLast) [] restBs
 
-                        False ->
-                            let
-                                nextAcc =
-                                    List.append acc [ theLast ]
-                            in
-                            unionHelp nextAcc (Just nextB) [] restBs
+                    else
+                        let
+                            nextAcc =
+                                List.append acc [ theLast ]
+                        in
+                        unionHelp nextAcc (Just nextB) [] restBs
 
                 ( nextA :: restAs, [] ) ->
-                    case nextA |> intersectsOrAdjoins theLast of
-                        True ->
-                            unionHelp acc (Just <| hull nextA theLast) restAs []
+                    if nextA |> intersectsOrAdjoins theLast then
+                        unionHelp acc (Just <| hull nextA theLast) restAs []
 
-                        False ->
-                            let
-                                nextAcc =
-                                    List.append acc [ theLast ]
-                            in
-                            unionHelp nextAcc (Just nextA) restAs []
+                    else
+                        let
+                            nextAcc =
+                                List.append acc [ theLast ]
+                        in
+                        unionHelp nextAcc (Just nextA) restAs []
 
                 _ ->
                     let
@@ -236,16 +233,15 @@ unionHelp acc last a b =
                             acc
 
                         Just nextInterval ->
-                            case nextInterval |> intersectsOrAdjoins theLast of
-                                True ->
-                                    unionHelp acc (Just <| hull nextInterval theLast) restAs restBs
+                            if nextInterval |> intersectsOrAdjoins theLast then
+                                unionHelp acc (Just <| hull nextInterval theLast) restAs restBs
 
-                                False ->
-                                    let
-                                        nextAcc =
-                                            List.append acc [ theLast ]
-                                    in
-                                    unionHelp nextAcc (Just nextInterval) restAs restBs
+                            else
+                                let
+                                    nextAcc =
+                                        List.append acc [ theLast ]
+                                in
+                                unionHelp nextAcc (Just nextInterval) restAs restBs
 
 
 intersectsOrAdjoins : Interval -> Interval -> Bool

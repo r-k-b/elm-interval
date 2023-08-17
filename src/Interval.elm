@@ -187,22 +187,19 @@ interval i j =
         u =
             Bound.value j
     in
-    case t == u of
-        True ->
-            case ( i, j ) of
-                ( Inclusive _, Inclusive _ ) ->
-                    Degenerate t
+    if t == u then
+        case ( i, j ) of
+            ( Inclusive _, Inclusive _ ) ->
+                Degenerate t
 
-                _ ->
-                    Empty
+            _ ->
+                Empty
 
-        False ->
-            case t < u of
-                True ->
-                    Bounded i j
+    else if t < u then
+        Bounded i j
 
-                False ->
-                    Empty
+    else
+        Empty
 
 
 {-| Return a String representation of an Interval.
@@ -250,12 +247,11 @@ intersection a b =
             Empty
 
         ( Degenerate x, Degenerate y ) ->
-            case x == y of
-                True ->
-                    Degenerate x
+            if x == y then
+                Degenerate x
 
-                False ->
-                    Empty
+            else
+                Empty
 
         ( Degenerate w, Bounded y z ) ->
             interval
