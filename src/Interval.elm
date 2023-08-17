@@ -181,13 +181,18 @@ leftBounded b =
 interval : Bound -> Bound -> Interval
 interval i j =
     let
+        t : Float
         t =
             Bound.value i
 
+        u : Float
         u =
             Bound.value j
     in
-    if t == u then
+    if isNaN t || isNaN u then
+        Empty
+
+    else if t == u then
         case ( i, j ) of
             ( Inclusive _, Inclusive _ ) ->
                 Degenerate t
