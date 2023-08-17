@@ -9,9 +9,9 @@ module Union exposing
     , subtract
     , subtractInterval
     , subtractUnions
+    , lowerBound, upperBound
     , toIntervals
     , unionToString
-    , lowerBound, upperBound
     )
 
 {-| A set of strictly ordered, fully disjoint Intervals.
@@ -38,6 +38,8 @@ module Union exposing
 @docs subtract
 @docs subtractInterval
 @docs subtractUnions
+
+@docs lowerBound, upperBound
 
 
 # Conversion
@@ -423,12 +425,15 @@ intersectionHelp acc (Union a) b =
 
         nextA :: restAs ->
             let
+                newAcc : Union
                 newAcc =
                     union acc (intersectionWithInterval nextA b)
             in
             intersectionHelp newAcc (Union restAs) b
 
 
+{-| Return the lower bound of a union, if it's not empty.
+-}
 lowerBound : Union -> Maybe Bound
 lowerBound (Union a) =
     case a of
@@ -436,9 +441,11 @@ lowerBound (Union a) =
             Nothing
 
         h :: _ ->
-            Interval.leftBound h
+            Interval.lowerBound h
 
 
+{-| Return the upper bound of a union, if it's not empty.
+-}
 upperBound : Union -> Maybe Bound
 upperBound (Union a) =
     let
@@ -446,7 +453,7 @@ upperBound (Union a) =
         helper head tail =
             case tail of
                 [] ->
-                    Interval.rightBound head
+                    Interval.upperBound head
 
                 nextHead :: nextTail ->
                     helper nextHead nextTail

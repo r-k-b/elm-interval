@@ -2,7 +2,7 @@ module Bound exposing
     ( Bound(..)
     , minOuter, maxOuter, minInner, maxInner
     , invert, negate
-    , value, isOpen
+    , value, isOpen, isInclusive, isExclusive
     )
 
 {-| A representation of numeric bounds.
@@ -21,7 +21,7 @@ module Bound exposing
 
 # Tests on Bounds
 
-@docs value, isOpen
+@docs value, isOpen, isInclusive, isExclusive
 
 -}
 
@@ -74,16 +74,33 @@ negate b =
             Exclusive -n
 
 
+{-| Whether the bound is inclusive or exclusive.
+-}
+isInclusive : Bound -> Bool
+isInclusive b =
+    case b of
+        Inclusive _ ->
+            True
+
+        Exclusive _ ->
+            False
+
+
+{-| Whether the bound is exclusive or inclusive.
+-}
+isExclusive : Bound -> Bool
+isExclusive b =
+    not (isInclusive b)
+
+
 {-| Whether the bound is open (exclusive) or closed (inclusive).
+
+Synonym of `isExclusive`.
+
 -}
 isOpen : Bound -> Bool
 isOpen b =
-    case b of
-        Inclusive _ ->
-            False
-
-        Exclusive _ ->
-            True
+    isExclusive b
 
 
 {-| Return the outer minimum of two Bounds.
