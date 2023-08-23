@@ -2,7 +2,6 @@ module Union exposing
     ( Union
     , fromInterval
     , fromIntervals
-    , toIntervals
     , union
     , unionOfIntervals
     , intersection
@@ -10,6 +9,8 @@ module Union exposing
     , subtract
     , subtractInterval
     , subtractUnions
+    , lowerBound, upperBound
+    , toIntervals
     , unionToString
     )
 
@@ -20,9 +21,14 @@ module Union exposing
 
 @docs Union
 
+
+# Constructors
+
 @docs fromInterval
 @docs fromIntervals
-@docs toIntervals
+
+
+# Operations on Unions
 
 @docs union
 @docs unionOfIntervals
@@ -32,10 +38,18 @@ module Union exposing
 @docs subtract
 @docs subtractInterval
 @docs subtractUnions
+
+@docs lowerBound, upperBound
+
+
+# Conversion
+
+@docs toIntervals
 @docs unionToString
 
 -}
 
+import Bound exposing (Bound)
 import Interval
     exposing
         ( Interval
@@ -75,12 +89,11 @@ intervalUnion a b =
 -}
 fromInterval : Interval -> Union
 fromInterval a =
-    case isEmpty a of
-        True ->
-            Union []
+    if isEmpty a then
+        Union []
 
-        False ->
-            Union [ a ]
+    else
+        Union [ a ]
 
 
 {-| Additively construct a union from an unordered list of arbitrary Intervals.
@@ -180,7 +193,7 @@ unionHelp acc last a b =
                 Nothing ->
                     acc
 
-                Just nextInterval ->
+                Just _ ->
                     unionHelp acc maybeNextInterval restAs restBs
 
         Just theLast ->
@@ -190,30 +203,28 @@ unionHelp acc last a b =
                     List.append acc [ theLast ]
 
                 ( [], nextB :: restBs ) ->
-                    case nextB |> intersectsOrAdjoins theLast of
-                        True ->
-                            unionHelp acc (Just <| hull nextB theLast) [] restBs
+                    if nextB |> intersectsOrAdjoins theLast then
+                        unionHelp acc (Just <| hull nextB theLast) [] restBs
 
-                        False ->
-                            let
-                                nextAcc =
-                                    List.append acc [ theLast ]
-                            in
-                            unionHelp nextAcc (Just nextB) [] restBs
+                    else
+                        let
+                            nextAcc =
+                                List.append acc [ theLast ]
+                        in
+                        unionHelp nextAcc (Just nextB) [] restBs
 
                 ( nextA :: restAs, [] ) ->
-                    case nextA |> intersectsOrAdjoins theLast of
-                        True ->
-                            unionHelp acc (Just <| hull nextA theLast) restAs []
+                    if nextA |> intersectsOrAdjoins theLast then
+                        unionHelp acc (Just <| hull nextA theLast) restAs []
 
-                        False ->
-                            let
-                                nextAcc =
-                                    List.append acc [ theLast ]
-                            in
-                            unionHelp nextAcc (Just nextA) restAs []
+                    else
+                        let
+                            nextAcc =
+                                List.append acc [ theLast ]
+                        in
+                        unionHelp nextAcc (Just nextA) restAs []
 
-                ( _, _ ) ->
+                _ ->
                     let
                         ( maybeNextInterval, restAs, restBs ) =
                             pickNextInterval a b
@@ -224,16 +235,15 @@ unionHelp acc last a b =
                             acc
 
                         Just nextInterval ->
-                            case nextInterval |> intersectsOrAdjoins theLast of
-                                True ->
-                                    unionHelp acc (Just <| hull nextInterval theLast) restAs restBs
+                            if nextInterval |> intersectsOrAdjoins theLast then
+                                unionHelp acc (Just <| hull nextInterval theLast) restAs restBs
 
-                                False ->
-                                    let
-                                        nextAcc =
-                                            List.append acc [ theLast ]
-                                    in
-                                    unionHelp nextAcc (Just nextInterval) restAs restBs
+                            else
+                                let
+                                    nextAcc =
+                                        List.append acc [ theLast ]
+                                in
+                                unionHelp nextAcc (Just nextInterval) restAs restBs
 
 
 intersectsOrAdjoins : Interval -> Interval -> Bool
@@ -287,7 +297,7 @@ pickNextInterval a b =
                         ( _, False ) ->
                             ( Just nextB, a, restBs )
 
-                        ( _, _ ) ->
+                        _ ->
                             ( Just nextA, restAs, b )
 
                 Just GT ->
@@ -415,7 +425,42 @@ intersectionHelp acc (Union a) b =
 
         nextA :: restAs ->
             let
+                newAcc : Union
                 newAcc =
                     union acc (intersectionWithInterval nextA b)
             in
             intersectionHelp newAcc (Union restAs) b
+
+
+{-| Return the lower bound of a union, if it's not empty.
+-}
+lowerBound : Union -> Maybe Bound
+lowerBound (Union a) =
+    case a of
+        [] ->
+            Nothing
+
+        h :: _ ->
+            Interval.lowerBound h
+
+
+{-| Return the upper bound of a union, if it's not empty.
+-}
+upperBound : Union -> Maybe Bound
+upperBound (Union a) =
+    let
+        helper : Interval -> List Interval -> Maybe Bound
+        helper head tail =
+            case tail of
+                [] ->
+                    Interval.upperBound head
+
+                nextHead :: nextTail ->
+                    helper nextHead nextTail
+    in
+    case a of
+        [] ->
+            Nothing
+
+        head :: tail ->
+            helper head tail

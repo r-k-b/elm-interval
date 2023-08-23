@@ -1,9 +1,10 @@
 module TestUnions exposing (suite)
 
-import Expect exposing (Expectation)
+import Expect
 import Interval
     exposing
-        ( degenerate
+        ( Interval
+        , degenerate
         , empty
         , excludes
         , includes
@@ -26,41 +27,49 @@ import Union
         )
 
 
+a : Interval
 a =
     -- [1, 2)
     interval (includes 1) (excludes 2)
 
 
+b : Interval
 b =
     -- [3, 4]
     interval (includes 3) (includes 4)
 
 
+c : Interval
 c =
     -- [2, 3]
     interval (includes 2) (includes 3)
 
 
+d : Interval
 d =
     -- (2, 5]
     interval (excludes 2) (includes 5)
 
 
+e : Interval
 e =
     -- [5, 6)
     interval (includes 5) (excludes 6)
 
 
+f : Interval
 f =
     -- [1, 3)
     interval (includes 1) (excludes 3)
 
 
+g : Interval
 g =
     -- [4, 6]
     interval (includes 4) (includes 6)
 
 
+h : Interval
 h =
     -- [7, 8]
     interval (includes 7) (includes 8)
@@ -297,5 +306,21 @@ suite =
                     subtractUnions ua ub
                         |> unionToString
                         |> Expect.equal expected
+            ]
+        , describe "lower and upper bounds"
+            [ describe "one interval"
+                [ test "lowerBound" <|
+                    \_ ->
+                        Interval.interval (includes 0) (excludes 1)
+                            |> Union.fromInterval
+                            |> Union.lowerBound
+                            |> Expect.equal (Just <| includes 0)
+                , test "upperBound" <|
+                    \_ ->
+                        Interval.interval (includes 0) (excludes 1)
+                            |> Union.fromInterval
+                            |> Union.upperBound
+                            |> Expect.equal (Just <| excludes 1)
+                ]
             ]
         ]

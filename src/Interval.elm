@@ -4,11 +4,8 @@ module Interval exposing
     , interval
     , degenerate
     , empty
-    , leftBounded
-    , rightBounded
+    , lowerBounded, upperBounded
     , unbounded
-    , excludes
-    , includes
     , hull
     , intersection
     , intervalToString
@@ -23,10 +20,16 @@ module Interval exposing
     , isBounded
     , isDegenerate
     , isEmpty
-    , isLeftBounded
-    , isRightBounded
-    , isLeftOpen
-    , isRightOpen
+    , isUnbounded
+    , isLowerBounded, isUpperBounded
+    , isLowerInclusive, isUpperInclusive
+    , isLowerExclusive, isUpperExclusive
+    , lowerBound, upperBound
+    , plus, negate, minus
+    , excludes, includes
+    , leftBounded, rightBounded
+    , isLeftBounded, isRightBounded
+    , isLeftOpen, isRightOpen
     )
 
 {-| A representation of numeric intervals (also known as _ranges_.)
@@ -45,15 +48,8 @@ module Interval exposing
 @docs interval
 @docs degenerate
 @docs empty
-@docs leftBounded
-@docs rightBounded
+@docs lowerBounded, upperBounded
 @docs unbounded
-
-
-# Endpoint (Bound) constructors
-
-@docs excludes
-@docs includes
 
 
 # Operations on Intervals
@@ -76,10 +72,24 @@ module Interval exposing
 @docs isBounded
 @docs isDegenerate
 @docs isEmpty
-@docs isLeftBounded
-@docs isRightBounded
-@docs isLeftOpen
-@docs isRightOpen
+@docs isUnbounded
+@docs isLowerBounded, isUpperBounded
+@docs isLowerInclusive, isUpperInclusive
+@docs isLowerExclusive, isUpperExclusive
+@docs lowerBound, upperBound
+
+
+# Arithmetic operations
+
+@docs plus, negate, minus
+
+
+# Deprecated functions
+
+@docs excludes, includes
+@docs leftBounded, rightBounded
+@docs isLeftBounded, isRightBounded
+@docs isLeftOpen, isRightOpen
 
 
 # Related reading
@@ -90,6 +100,7 @@ module Interval exposing
 
 -}
 
+import Bound exposing (Bound(..))
 import String
 
 
@@ -110,15 +121,17 @@ type Interval
 This encompasses the "endpoints" of unbounded intervals when the bound value
 is either of the `Infinity` values in the floating point spec.
 
-Opaque type.
+Deprecated, use `Bound.Bound` directly.
 
 -}
-type Bound
-    = Inclusive Float
-    | Exclusive Float
+type alias Bound =
+    Bound.Bound
 
 
 {-| An inclusive endpoint of an interval.
+
+Deprecated, use `Bound.Inclusive` directly.
+
 -}
 includes : Float -> Bound
 includes n =
@@ -126,20 +139,13 @@ includes n =
 
 
 {-| An exclusive endpoint of an interval.
+
+Deprecated, use `Bound.Exclusive` directly.
+
 -}
 excludes : Float -> Bound
 excludes n =
     Exclusive n
-
-
-boundValue : Bound -> Float
-boundValue b =
-    case b of
-        Inclusive n ->
-            n
-
-        Exclusive n ->
-            n
 
 
 {-| An empty Interval.
@@ -166,50 +172,75 @@ unbounded =
     interval (Inclusive <| -1 / 0) (Inclusive <| 1 / 0)
 
 
-{-| Convenience function for a right-bounded Interval (from -∞ to some n)
+{-| Convenience function for a upper-bounded Interval (from -∞ included to some n).
 -}
-rightBounded : Bound -> Interval
-rightBounded b =
+upperBounded : Bound -> Interval
+upperBounded b =
     interval (Inclusive <| -1 / 0) b
 
 
-{-| Convenience function for a left-bounded Interval (from some n to +∞)
+{-| Convenience function for a lower-bounded Interval (from some n to +∞ included).
 -}
-leftBounded : Bound -> Interval
-leftBounded b =
+lowerBounded : Bound -> Interval
+lowerBounded b =
     interval b (Inclusive <| 1 / 0)
 
 
-{-| Constructs an `Interval` from two Bounds.
+{-| Convenience function for a right-bounded Interval (from -∞ included to some n).
+
+Deprecated, user upperBounded.
+
+-}
+rightBounded : Bound -> Interval
+rightBounded b =
+    upperBounded b
+
+
+{-| Convenience function for a left-bounded Interval (from some n to +∞ included).
+
+Deprecated, use `lowerBounded`.
+
+-}
+leftBounded : Bound -> Interval
+leftBounded b =
+    lowerBounded b
+
+
+{-| Constructs an `Interval` from two `Bound`s.
+
+If either of the bounds is `NaN` the `Interval` will be empty.
+
 -}
 interval : Bound -> Bound -> Interval
 interval i j =
     let
+        t : Float
         t =
-            boundValue i
+            Bound.value i
 
+        u : Float
         u =
-            boundValue j
+            Bound.value j
     in
-    case t == u of
-        True ->
-            case ( i, j ) of
-                ( Inclusive _, Inclusive _ ) ->
-                    Degenerate t
+    if isNaN t || isNaN u then
+        Empty
 
-                ( _, _ ) ->
-                    Empty
+    else if t == u then
+        case ( i, j ) of
+            ( Inclusive _, Inclusive _ ) ->
+                Degenerate t
 
-        False ->
-            case t < u of
-                True ->
-                    Bounded i j
+            _ ->
+                Empty
 
-                False ->
-                    Empty
+    else if t < u then
+        Bounded i j
+
+    else
+        Empty
 
 
-{-| Return a String representation of an Interval.
+{-| Return a `String` representation of an `Interval`.
 -}
 intervalToString : Interval -> String
 intervalToString interval_val =
@@ -222,6 +253,7 @@ intervalToString interval_val =
 
         Bounded x y ->
             let
+                left : String
                 left =
                     case x of
                         Exclusive n ->
@@ -230,6 +262,7 @@ intervalToString interval_val =
                         Inclusive n ->
                             "[" ++ String.fromFloat n
 
+                right : String
                 right =
                     case y of
                         Exclusive n ->
@@ -239,156 +272,6 @@ intervalToString interval_val =
                             String.fromFloat n ++ "]"
             in
             left ++ ", " ++ right
-
-
-{-| Return the outer minimum of two Bounds.
-
-    minOuterBound (includes 1) (excludes 1) == includes 1
-
-    minOuterBound (includes 1) (excludes 0) == excludes 0
-
--}
-minOuterBound : Bound -> Bound -> Bound
-minOuterBound a b =
-    let
-        x =
-            boundValue a
-
-        y =
-            boundValue b
-    in
-    case x < y of
-        True ->
-            a
-
-        False ->
-            case y < x of
-                True ->
-                    b
-
-                False ->
-                    -- x == y
-                    andInclusives a b
-
-
-{-| Return the outer maximum of two Bounds.
-
-    maxOuterBound (includes 1) (excludes 1) == includes 1
-
-    maxOuterBound (includes 1) (excludes 2) == excludes 2
-
--}
-maxOuterBound : Bound -> Bound -> Bound
-maxOuterBound a b =
-    let
-        x =
-            boundValue a
-
-        y =
-            boundValue b
-    in
-    case x < y of
-        True ->
-            b
-
-        False ->
-            case y < x of
-                True ->
-                    a
-
-                False ->
-                    -- x == y
-                    andInclusives a b
-
-
-{-| Return the inner minimum of two Bounds.
-
-    minOuterBound (includes 1) (excludes 1) == excludes 1
-
-    minOuterBound (includes 0) (excludes 1) == includes 0
-
--}
-minInnerBound : Bound -> Bound -> Bound
-minInnerBound a b =
-    let
-        x =
-            boundValue a
-
-        y =
-            boundValue b
-    in
-    case x < y of
-        True ->
-            a
-
-        False ->
-            case y < x of
-                True ->
-                    b
-
-                False ->
-                    -- x == y
-                    andExclusives a b
-
-
-{-| Return the inner maximum of two Bounds.
-
-    maxInnerBound (includes 1) (excludes 1) == excludes 1
-
-    maxInnerBound (includes 0) (excludes 1) == includes 0
-
--}
-maxInnerBound : Bound -> Bound -> Bound
-maxInnerBound a b =
-    let
-        x =
-            boundValue a
-
-        y =
-            boundValue b
-    in
-    case x < y of
-        True ->
-            b
-
-        False ->
-            case y < x of
-                True ->
-                    a
-
-                False ->
-                    -- x == y
-                    andExclusives a b
-
-
-{-| If either Bound is Exclusive, return that. Else, both are Inclusive; return the first.
--}
-andInclusives : Bound -> Bound -> Bound
-andInclusives a b =
-    case ( a, b ) of
-        ( Inclusive _, Inclusive _ ) ->
-            a
-
-        ( Exclusive _, _ ) ->
-            a
-
-        ( _, Exclusive _ ) ->
-            b
-
-
-{-| If either Bound is Inclusive, return that. Else, both are Exclusive; return the first.
--}
-andExclusives : Bound -> Bound -> Bound
-andExclusives a b =
-    case ( a, b ) of
-        ( Exclusive _, Exclusive _ ) ->
-            a
-
-        ( Inclusive _, _ ) ->
-            a
-
-        ( _, Inclusive _ ) ->
-            b
 
 
 {-| The intersection of two intervals. If the intervals overlap, this is the common part.
@@ -404,27 +287,26 @@ intersection a b =
             Empty
 
         ( Degenerate x, Degenerate y ) ->
-            case x == y of
-                True ->
-                    Degenerate x
+            if x == y then
+                Degenerate x
 
-                False ->
-                    Empty
+            else
+                Empty
 
         ( Degenerate w, Bounded y z ) ->
             interval
-                (maxOuterBound (includes w) y)
-                (minOuterBound (includes w) z)
+                (Bound.maxOuter (includes w) y)
+                (Bound.minOuter (includes w) z)
 
         ( Bounded w x, Degenerate y ) ->
             interval
-                (maxOuterBound w (includes y))
-                (minOuterBound x (includes y))
+                (Bound.maxOuter w (includes y))
+                (Bound.minOuter x (includes y))
 
         ( Bounded w x, Bounded y z ) ->
             interval
-                (maxOuterBound w y)
-                (minOuterBound x z)
+                (Bound.maxOuter w y)
+                (Bound.minOuter x z)
 
 
 {-| The convex hull of two intervals. This is similar to union in that
@@ -445,18 +327,18 @@ hull a b =
 
         ( Degenerate w, Bounded y z ) ->
             interval
-                (minInnerBound (includes w) y)
-                (maxInnerBound (includes w) z)
+                (Bound.minInner (includes w) y)
+                (Bound.maxInner (includes w) z)
 
         ( Bounded w x, Degenerate y ) ->
             interval
-                (minInnerBound w (includes y))
-                (maxInnerBound x (includes y))
+                (Bound.minInner w (includes y))
+                (Bound.maxInner x (includes y))
 
         ( Bounded w x, Bounded y z ) ->
             interval
-                (minInnerBound w y)
-                (maxInnerBound x z)
+                (Bound.minInner w y)
+                (Bound.maxInner x z)
 
 
 {-| Extract the value of the lower bound of an Interval.
@@ -470,8 +352,8 @@ lowerBoundValue a =
         Degenerate n ->
             Just n
 
-        Bounded l u ->
-            Just <| boundValue l
+        Bounded l _ ->
+            Just <| Bound.value l
 
 
 {-| Extract the value of the upper bound of an Interval.
@@ -485,8 +367,8 @@ upperBoundValue a =
         Degenerate n ->
             Just n
 
-        Bounded l u ->
-            Just <| boundValue u
+        Bounded _ u ->
+            Just <| Bound.value u
 
 
 {-| Do these two intervals intersect?
@@ -513,13 +395,13 @@ intersects a b =
         ( Degenerate x, Degenerate y ) ->
             x == y
 
-        ( Degenerate w, Bounded y z ) ->
+        ( Degenerate _, Bounded _ _ ) ->
             intersection a b == a
 
-        ( Bounded w x, Degenerate y ) ->
+        ( Bounded _ _, Degenerate _ ) ->
             intersection a b == b
 
-        ( Bounded w x, Bounded y z ) ->
+        ( Bounded _ _, Bounded _ _ ) ->
             intersection a b /= empty
 
 
@@ -547,27 +429,26 @@ adjoins a b =
         ( _, Empty ) ->
             False
 
-        ( Degenerate x, Degenerate y ) ->
+        ( Degenerate _, Degenerate _ ) ->
             False
 
         ( Degenerate w, Bounded y z ) ->
-            (isOpenBound y && w == boundValue y) || (isOpenBound z && w == boundValue z)
+            (Bound.isOpen y && w == Bound.value y) || (Bound.isOpen z && w == Bound.value z)
 
         ( Bounded w x, Degenerate y ) ->
-            (isOpenBound w && y == boundValue w) || (isOpenBound x && y == boundValue x)
+            (Bound.isOpen w && y == Bound.value w) || (Bound.isOpen x && y == Bound.value x)
 
         ( Bounded w x, Bounded y z ) ->
             let
-                ( ( wOpen, xOpen ), ( yOpen, zOpen ) ) =
-                    ( ( isOpenBound w, isOpenBound x ), ( isOpenBound y, isOpenBound z ) )
-
+                upperLowerMatch : Bool
                 upperLowerMatch =
-                    (xOpen |> xor yOpen)
-                        && (boundValue x == boundValue y)
+                    (Bound.isOpen x |> xor (Bound.isOpen y))
+                        && (Bound.value x == Bound.value y)
 
+                lowerUpperMatch : Bool
                 lowerUpperMatch =
-                    (wOpen |> xor zOpen)
-                        && (boundValue w == boundValue z)
+                    (Bound.isOpen w |> xor (Bound.isOpen z))
+                        && (Bound.value w == Bound.value z)
             in
             not (a |> intersects b) && (upperLowerMatch || lowerUpperMatch)
 
@@ -592,7 +473,7 @@ intersectsPoint a n =
         Degenerate x ->
             x == n
 
-        Bounded w x ->
+        Bounded _ _ ->
             intersection a (degenerate n) == degenerate n
 
 
@@ -608,7 +489,7 @@ isBounded a =
             not <| isInfinite x
 
         Bounded x y ->
-            not <| isInfinite (boundValue x) || isInfinite (boundValue y)
+            not <| isInfinite (Bound.value x) || isInfinite (Bound.value y)
 
 
 {-| Is this a degenerate (point-valued) interval?
@@ -643,32 +524,52 @@ isEmpty a =
 
 {-| Does this interval have a finite lower bound, and an infinite upper bound?
 -}
-isLeftBounded : Interval -> Bool
-isLeftBounded a =
+isLowerBounded : Interval -> Bool
+isLowerBounded a =
     case a of
         Empty ->
             False
 
-        Degenerate x ->
+        Degenerate _ ->
             False
 
         Bounded x y ->
-            (not <| isInfinite (boundValue x)) && isInfinite (boundValue y)
+            (not <| isInfinite (Bound.value x)) && isInfinite (Bound.value y)
+
+
+{-| Does this interval have a finite lower bound, and an infinite upper bound?
+
+Deprecated, use `isLowerBounded`.
+
+-}
+isLeftBounded : Interval -> Bool
+isLeftBounded a =
+    isLowerBounded a
 
 
 {-| Does this interval have a finite upper bound, and an infinite lower bound?
 -}
-isRightBounded : Interval -> Bool
-isRightBounded a =
+isUpperBounded : Interval -> Bool
+isUpperBounded a =
     case a of
         Empty ->
             False
 
-        Degenerate x ->
+        Degenerate _ ->
             False
 
         Bounded x y ->
-            (not <| isInfinite (boundValue y)) && isInfinite (boundValue x)
+            (not <| isInfinite (Bound.value y)) && isInfinite (Bound.value x)
+
+
+{-| Does this interval have a finite upper bound, and an infinite lower bound?
+
+Deprecated, use `isUpperBounded`.
+
+-}
+isRightBounded : Interval -> Bool
+isRightBounded a =
+    isUpperBounded a
 
 
 {-| Is this interval unbounded?
@@ -683,23 +584,53 @@ isUnbounded a =
             False
 
         Bounded lower upper ->
-            (isInfinite <| boundValue lower) && (isInfinite <| boundValue upper)
+            (isInfinite <| Bound.value lower) && (isInfinite <| Bound.value upper)
 
 
-isOpenBound : Bound -> Bool
-isOpenBound b =
-    case b of
-        Inclusive _ ->
+{-| Is the lower bound of this interval inclusive?
+-}
+isLowerInclusive : Interval -> Bool
+isLowerInclusive a =
+    case a of
+        Empty ->
             False
 
-        Exclusive _ ->
-            True
+        Degenerate _ ->
+            False
+
+        Bounded lower _ ->
+            Bound.isInclusive lower
 
 
-{-| Is the lower bound of this interval open?
+{-| Is the lower bound of this interval exclusive?
+-}
+isLowerExclusive : Interval -> Bool
+isLowerExclusive a =
+    case a of
+        Empty ->
+            False
+
+        Degenerate _ ->
+            False
+
+        Bounded lower _ ->
+            Bound.isExclusive lower
+
+
+{-| Is the lower bound of this interval open (exclusive)?
+
+Deprecated, use `isLowerExclusive`.
+
 -}
 isLeftOpen : Interval -> Bool
 isLeftOpen a =
+    isLowerExclusive a
+
+
+{-| Is the upper bound of this interval inclusive?
+-}
+isUpperInclusive : Interval -> Bool
+isUpperInclusive a =
     case a of
         Empty ->
             False
@@ -707,23 +638,69 @@ isLeftOpen a =
         Degenerate _ ->
             False
 
-        Bounded lower upper ->
-            isOpenBound lower
+        Bounded _ upper ->
+            Bound.isInclusive upper
 
 
-{-| Is the upper bound of this interval open?
+{-| Is the upper bound of this interval exclusive?
+-}
+isUpperExclusive : Interval -> Bool
+isUpperExclusive a =
+    case a of
+        Empty ->
+            False
+
+        Degenerate _ ->
+            False
+
+        Bounded _ upper ->
+            Bound.isExclusive upper
+
+
+{-| Is the upper bound of this interval open (exclusive)?
+
+Deprecated, use `isUpperExclusive`.
+
 -}
 isRightOpen : Interval -> Bool
 isRightOpen a =
+    isUpperExclusive a
+
+
+{-| Returns the lower (left) bound of the interval, returns `Nothing` if it's empty.
+
+    lowerBound (interval (includes 0) (excludes 1)) == Just (includes 0)
+
+-}
+lowerBound : Interval -> Maybe Bound
+lowerBound a =
     case a of
         Empty ->
-            False
+            Nothing
 
-        Degenerate _ ->
-            False
+        Degenerate f ->
+            Just <| Inclusive f
 
-        Bounded lower upper ->
-            isOpenBound upper
+        Bounded l _ ->
+            Just l
+
+
+{-| Returns the upper (right) bound of the interval, returns `Nothing` if it's empty.
+
+    upperBound (interval (includes 0) (excludes 1)) == Just (excludes 1)
+
+-}
+upperBound : Interval -> Maybe Bound
+upperBound a =
+    case a of
+        Empty ->
+            Nothing
+
+        Degenerate f ->
+            Just <| Inclusive f
+
+        Bounded _ r ->
+            Just r
 
 
 {-| Returns the largest open interval contained within a.
@@ -743,19 +720,21 @@ interior a =
 
         Bounded x y ->
             let
+                t : Float
                 t =
-                    boundValue x
+                    Bound.value x
 
+                u : Float
                 u =
-                    boundValue y
+                    Bound.value y
             in
-            interval (excludes t) (excludes u)
+            interval (Exclusive t) (Exclusive u)
 
 
 {-| Returns the smallest closed interval containing a.
 
     -- `closure((x, y)) == [x, y]`
-    interior (interval (excludes 0) (excludes 2)) == interval (includes 0) (includes 2)
+    closure (interval (excludes 0) (excludes 2)) == interval (includes 0) (includes 2)
 
 -}
 closure : Interval -> Interval
@@ -769,17 +748,19 @@ closure a =
 
         Bounded x y ->
             let
+                t : Float
                 t =
-                    boundValue x
+                    Bound.value x
 
+                u : Float
                 u =
-                    boundValue y
+                    Bound.value y
             in
-            interval (includes t) (includes u)
+            interval (Inclusive t) (Inclusive u)
 
 
-{-| Subtract interval `b` from interval `a`, returning a list of the parts of
-`a` that did not intersect with `b`.
+{-| Subtract the second interval from the first one, returning a list of the parts of
+the first that did not intersect with the second.
 
 E.g.:
 
@@ -796,7 +777,7 @@ subtract a b =
             ( Empty, _ ) ->
                 []
 
-            ( Degenerate w, _ ) ->
+            ( Degenerate _, _ ) ->
                 []
 
             ( Bounded w x, Degenerate y ) ->
@@ -807,16 +788,18 @@ subtract a b =
 
             ( Bounded w x, Bounded y z ) ->
                 let
+                    left : List Interval
                     left =
-                        if minInnerBound w y == w && w /= y then
-                            [ interval w (invertBound y) ]
+                        if Bound.minInner w y == w && w /= y then
+                            [ interval w (Bound.invert y) ]
 
                         else
                             []
 
+                    right : List Interval
                     right =
-                        if maxInnerBound x z == x && x /= z then
-                            [ interval (invertBound z) x ]
+                        if Bound.maxInner x z == x && x /= z then
+                            [ interval (Bound.invert z) x ]
 
                         else
                             []
@@ -827,13 +810,81 @@ subtract a b =
         [ a ]
 
 
-{-| Hold the bound value steady, but invert the open/closed property.
--}
-invertBound : Bound -> Bound
-invertBound b =
-    case b of
-        Inclusive n ->
-            Exclusive n
+{-| Arithmetically add two intervals. Given two intervals `a` and `b` returns an interval that contains all the number that can be obtained by adding a number from the first interval to a number from the second interval.
 
-        Exclusive n ->
-            Inclusive n
+  - plus (1,3] [10,20] = (11, 23]
+
+-}
+plus : Interval -> Interval -> Interval
+plus l r =
+    let
+        boundPlusFloat : Bound -> Float -> Bound
+        boundPlusFloat bound f =
+            case bound of
+                Inclusive n ->
+                    Inclusive (f + n)
+
+                Exclusive n ->
+                    Exclusive (f + n)
+
+        boundPlusBound : Bound -> Bound -> Bound
+        boundPlusBound lbound rbound =
+            case ( lbound, rbound ) of
+                ( Inclusive lb, Inclusive rb ) ->
+                    Inclusive (lb + rb)
+
+                ( Inclusive lb, Exclusive rb ) ->
+                    Exclusive (lb + rb)
+
+                ( Exclusive lb, Inclusive rb ) ->
+                    Exclusive (lb + rb)
+
+                ( Exclusive lb, Exclusive rb ) ->
+                    Exclusive (lb + rb)
+    in
+    case ( l, r ) of
+        ( Empty, _ ) ->
+            Empty
+
+        ( _, Empty ) ->
+            Empty
+
+        ( Degenerate lf, Degenerate rf ) ->
+            Degenerate (lf + rf)
+
+        ( Bounded ll lu, Degenerate rf ) ->
+            Bounded (boundPlusFloat ll rf) (boundPlusFloat lu rf)
+
+        ( Degenerate lf, Bounded rl ru ) ->
+            Bounded (boundPlusFloat rl lf) (boundPlusFloat ru lf)
+
+        ( Bounded ll lu, Bounded rl ru ) ->
+            Bounded (boundPlusBound ll rl) (boundPlusBound lu ru)
+
+
+{-| Arithmetically negate an interval.
+
+  - negate (-1, 2] = [-2, 1)
+
+-}
+negate : Interval -> Interval
+negate l =
+    case l of
+        Empty ->
+            Empty
+
+        Bounded lower upper ->
+            Bounded (Bound.negate upper) (Bound.negate lower)
+
+        Degenerate f ->
+            Degenerate -f
+
+
+{-| Arithmetically subtracts two intervals. Given two intervals `a` and `b` returns an interval that contains all the number that can be obtained by subtracting a number from the second interval from a number from the first interval.
+
+  - minus [10,20] (1,3] = [7, 21)
+
+-}
+minus : Interval -> Interval -> Interval
+minus l r =
+    plus l (negate r)
