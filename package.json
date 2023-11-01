@@ -21,7 +21,7 @@
   "dependencies": {
     "chokidar": "^3.5.3",
     "chokidar-cli": "^3.0.0",
-    "elm": "^0.19.1-5",
+    "elm": "^0.19.1-6",
     "elm-format": "^0.8.7",
     "elm-review": "^2.10.3",
     "elm-test": "^0.19.1-revision12"
