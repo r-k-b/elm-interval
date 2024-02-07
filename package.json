@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/r-k-b/elm-interval#readme",
   "dependencies": {
-    "chokidar": "^3.5.3",
+    "chokidar": "^3.6.0",
     "chokidar-cli": "^3.0.0",
     "elm": "^0.19.1-6",
     "elm-format": "^0.8.7",
