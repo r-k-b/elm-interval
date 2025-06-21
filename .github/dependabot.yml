@@ -9,7 +9,9 @@ updates:
   reviewers:
   - r-k-b
 - package-ecosystem: elm
-  directory: "/"
+  directories:
+    - "/"
+    - "/review"
   schedule:
     interval: daily
     time: "19:00"
