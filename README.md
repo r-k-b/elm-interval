@@ -52,5 +52,11 @@ that topology.
 In roughly descending order of priority:
 
 - [ ] add examples of real use cases to the readme (potentially replacing the "What is an interval?" filler)
-- [ ] sort out the build / test systems (using make or npm?)
+- [x] sort out the build / test systems (~~using make or npm?~~ nix + npm, for now)
 - [ ] implement Interval Trees
+
+
+# development
+
+Recommended to use direnv & Nix.
+To begin, type `direnv allow` inside the project folder. 
