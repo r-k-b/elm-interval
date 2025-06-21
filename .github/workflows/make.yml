@@ -27,5 +27,5 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - run: nix develop . --command 'just check'
+      - run: nix develop . --command just -- check
         name: Check everything builds, passes tests, passes linters, etc
