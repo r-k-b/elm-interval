@@ -13,14 +13,14 @@ jobs:
         uses: DeterminateSystems/flake-checker-action@v12
         with:
           fail-mode: true
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         name: cache elm
         with:
           path: ~/.elm
           key: ${{ runner.os }}-elm-${{ hashFiles('**/elm.json') }}
           restore-keys: |
             ${{ runner.os }}-elm-
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         name: cache npm
         with:
           path: ~/.npm
