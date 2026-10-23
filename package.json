@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/r-k-b/elm-interval#readme",
   "dependencies": {
-    "chokidar": "^5.0.0",
+    "chokidar": "^6.0.0",
     "chokidar-cli": "^3.0.0"
   }
 }
